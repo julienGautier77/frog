@@ -24,6 +24,9 @@ from oneMotorSimpleFrog import ONEMOTOR
 from scanMotor import SCAN
 from visu import SEE2
 from visualResult import SEERESULT
+
+from seabreeze.spectrometers import Spectrometer, list_devices
+
 class FROG(QMainWindow) :
     
     def __init__(self):
@@ -56,12 +59,17 @@ class FROG(QMainWindow) :
         self.configMotName='configMoteurTest.ini'
         self.motor=ONEMOTOR(mot0=self.motorName,motorTypeName0=self.motorType,unit=3,jogValue=1)
         self.scanWidget=SCAN(MOT=self.motor,motor=self.motorName,configMotName=self.configPath+self.configMotName) # for the scan)
+        listdevice=list_devices()
+        self.spectrometer=Spectrometer(listdevice[0])
+        print("spectrometer connected @",self.spectrometer)
+        self.wavelengths=self.spectrometer.wavelengths() # array Wavelengths of the spectrometer 
+        
+        
+        self.moyenne=1
+        self.nbShot=1
         self.setup()
-    
+        self.actionButton()
     def setup(self):
-        
-        
-        
         
         hbox1=QHBoxLayout() # horizontal layout pour run snap stop
         self.sizebuttonMax=30
@@ -94,7 +102,6 @@ class FROG(QMainWindow) :
         self.stopButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: gray ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"% (self.iconStop,self.iconStop) )
         self.stopButton.setEnabled(False)
       
-        
         hbox1.addWidget(self.runButton)
         hbox1.addWidget(self.snapButton)
         hbox1.addWidget(self.stopButton)
@@ -106,6 +113,7 @@ class FROG(QMainWindow) :
         self.dockControl=QDockWidget(self)
         self.dockControl.setWidget(self.widgetControl)
         self.dockControl.resize(80,80)
+        
         self.trigg=QComboBox()
         self.trigg.setMaximumWidth(80)
         self.trigg.addItem('OFF')
@@ -119,7 +127,6 @@ class FROG(QMainWindow) :
         hbox2.setSizeConstraint(QtGui.QLayout.SetFixedSize)
         hbox2.setContentsMargins(5, 15, 0, 0)
         hbox2.addWidget(self.labelTrigger)
-        
         hbox2.addWidget(self.trigg)
         self.widgetTrig=QWidget(self)
         
@@ -129,15 +136,18 @@ class FROG(QMainWindow) :
         
         self.labelExp=QLabel('Exposure (ms)')
         self.labelExp.setStyleSheet('font :bold  10pt')
-        self.labelExp.setMaximumWidth(120)
+        self.labelExp.setMaximumWidth(500)
         self.labelExp.setAlignment(Qt.AlignCenter)
         
         self.hSliderShutter=QSlider(Qt.Horizontal)
         self.hSliderShutter.setMaximumWidth(80)
+        self.hSliderShutter.setValue(100)
         self.shutterBox=QSpinBox()
         self.shutterBox.setStyleSheet('font :bold  8pt')
-        self.shutterBox.setMaximumWidth(120)
-        
+        self.shutterBox.setMaximumWidth(200)
+        self.hSliderShutter.setMaximum(5000)
+        self.shutterBox.setMaximum(5000)
+        self.shutterBox.setValue(100)
         hboxShutter=QHBoxLayout()
         hboxShutter.setContentsMargins(5, 0, 0, 0)
         hboxShutter.setSpacing(10)
@@ -159,35 +169,28 @@ class FROG(QMainWindow) :
         
         
         
-        self.labelGain=QLabel('Gain')
-        self.labelGain.setStyleSheet('font :bold  10pt')
-        self.labelGain.setMaximumWidth(120)
-        self.labelGain.setAlignment(Qt.AlignCenter)
+        self.labelMoy=QLabel('Average')
+        self.labelMoy.setStyleSheet('font :bold  10pt')
+        self.labelMoy.setMaximumWidth(120)
+        self.labelMoy.setAlignment(Qt.AlignCenter)
         
-        self.hSliderGain=QSlider(Qt.Horizontal)
-        self.hSliderGain.setMaximumWidth(80)
-        self.gainBox=QSpinBox()
-        self.gainBox.setMaximumWidth(60)
-        self.gainBox.setStyleSheet('font :bold  8pt')
-        self.gainBox.setMaximumWidth(120)
-        
-        hboxGain=QHBoxLayout()
-        hboxGain.setContentsMargins(5, 0, 0, 0)
-        hboxGain.setSpacing(10)
-        vboxGain=QVBoxLayout()
-        vboxGain.setSpacing(0)
-        vboxGain.addWidget(self.labelGain)
+       
+        self.moyBox=QSpinBox()
+        self.moyBox.setMaximumWidth(60)
+        self.moyBox.setStyleSheet('font :bold  8pt')
+        self.moyBox.setMaximum(100)
+        self.moyBox.setValue(1)
+        hboxMoy=QHBoxLayout()
+        hboxMoy.setContentsMargins(5, 15, 200, 0)
+        hboxMoy.setSpacing(10)
 
-        hboxGain.addWidget(self.hSliderGain)
-        hboxGain.addWidget(self.gainBox)
-        vboxGain.addLayout(hboxGain)
-        vboxGain.setSizeConstraint(QtGui.QLayout.SetFixedSize)
-        vboxGain.setContentsMargins(5, 5, 0, 0)
+        hboxMoy.addWidget(self.labelMoy)
+        hboxMoy.addWidget(self.moyBox)
         
-        self.widgetGain=QWidget(self)
-        self.widgetGain.setLayout(vboxGain)
-        self.dockGain=QDockWidget(self)
-        self.dockGain.setWidget(self.widgetGain)
+        self.widgetMoy=QWidget(self)
+        self.widgetMoy.setLayout(hboxMoy)
+        self.dockMoy=QDockWidget(self)
+        self.dockMoy.setWidget(self.widgetMoy)
         
         
         
@@ -201,8 +204,8 @@ class FROG(QMainWindow) :
         self.graph.addDockWidget(Qt.TopDockWidgetArea,self.dockTrig)
         self.dockShutter.setTitleBarWidget(QWidget())
         self.graph.addDockWidget(Qt.TopDockWidgetArea,self.dockShutter)
-        self.dockGain.setTitleBarWidget(QWidget())
-        self.graph.addDockWidget(Qt.TopDockWidgetArea,self.dockGain)
+        self.dockMoy.setTitleBarWidget(QWidget())
+        self.graph.addDockWidget(Qt.TopDockWidgetArea,self.dockMoy)
         
         
         
@@ -241,6 +244,89 @@ class FROG(QMainWindow) :
         
         self.setCentralWidget(self.tabs)
     
+        self.threadOneAcq=ThreadOneAcq(self)
+        self.threadOneAcq.newDataRun.connect(self.newImageReceived)#,QtCore.Qt.DirectConnection)
+        self.threadOneAcq.newStateCam.connect(self.stateCam)
+        self.threadRunAcq=ThreadRunAcq(self)
+        self.threadRunAcq.newDataRun.connect(self.newImageReceived)
+        
+    def actionButton(self): 
+        '''action when button are pressed
+        '''
+        self.runButton.clicked.connect(self.acquireMultiImage)
+        self.snapButton.clicked.connect(self.acquireOneImage)
+        self.stopButton.clicked.connect(self.stopAcq)      
+        self.shutterBox.editingFinished.connect(self.shutter)    
+        self.hSliderShutter.sliderReleased.connect(self.mSliderShutter)
+        self.moyBox.editingFinished.connect(self.MoyenneAct)    
+        
+        # self.trigg.currentIndexChanged.connect(self.trigger)
+    def MoyenneAct(self):
+        self.moyenne=(self.moyBox.value())
+        
+    
+    def shutter (self):
+        '''
+        set exposure time 
+        '''
+        
+        sh=self.shutterBox.value() # 
+        self.hSliderShutter.setValue(sh) # set value of slider
+        time.sleep(0.1)
+        self.spectrometer.integration_time_micros(sh*1000) # en micro
+    
+    
+    
+    def mSliderShutter(self): # for shutter slider 
+        sh=self.hSliderShutter.value() 
+        self.shutterBox.setValue(sh) # 
+        self.spectrometer.integration_time_micros(sh*1000)
+        
+    
+    def acquireMultiImage(self):
+        ''' 
+            start the acquisition thread
+        '''
+        
+        self.runButton.setEnabled(False)
+        self.runButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: gray ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconPlay,self.iconPlay))
+        self.snapButton.setEnabled(False)
+        self.snapButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: gray ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconSnap,self.iconSnap))
+        self.stopButton.setEnabled(True)
+        self.stopButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: transparent ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconStop,self.iconStop) )
+        self.trigg.setEnabled(False)
+        
+        self.threadRunAcq.newRun() # to set stopRunAcq=False
+        self.threadRunAcq.start()
+        self.camIsRunnig=True
+        
+    def acquireOneImage(self):
+        '''Start on acquisition
+        '''
+        
+        self.imageReceived=False
+        self.runButton.setEnabled(False)
+        self.runButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: gray ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconPlay,self.iconPlay))
+        self.snapButton.setEnabled(False)
+        self.snapButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: gray ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color:gray}"%(self.iconSnap,self.iconSnap))
+        self.stopButton.setEnabled(True)
+        self.stopButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: transparent ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconStop,self.iconStop) )
+        self.trigg.setEnabled(False)
+        
+        self.camIsRunnig=True
+        self.threadOneAcq.newRun() # to set stopRunAcq=False
+        self.threadOneAcq.start()
+        
+    def stateCam(self,state):
+        self.camIsRunnig=state
+        print(state)
+    
+    def newImageReceived(self,data):
+        self.data=data
+        self.graph.PLOT(self.data,axis=self.wavelengths)
+        if self.camIsRunnig is False:
+            self.stopAcq()
+    
     def nbShotAction(self):
         '''
         number of snapShot
@@ -250,10 +336,136 @@ class FROG(QMainWindow) :
             self.nbShot=int(nbShot)
             if self.nbShot<=0:
                self.nbShot=1
+               
+               
+    def stopAcq(self):
+        '''Stop  acquisition
+        '''
+        
+        self.runButton.setEnabled(True)
+        self.runButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: transparent ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconPlay,self.iconPlay))
+        self.snapButton.setEnabled(True)
+        self.snapButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: transparent ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconSnap,self.iconSnap))
 
+        self.stopButton.setEnabled(False)
+        self.stopButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: gray ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconStop,self.iconStop) )
+        self.trigg.setEnabled(True)  
+        
+        self.threadRunAcq.stopThreadRunAcq()
 
+class ThreadOneAcq(QtCore.QThread):
+    
+    '''Second thread for controling one or more  acquisition independtly
+    '''
+    newDataRun=QtCore.Signal(object)
+    newStateCam=QtCore.Signal(bool)
+    
+    def __init__(self, parent):
+        
+        super(ThreadOneAcq,self).__init__(parent)
+        self.parent=parent
+        self.spectrometer = parent.spectrometer
+        self.stopRunAcq=False
+        self.itrig= parent.itrig
+        
+        
+    def wait(self,seconds):
+        time_end=time.time()+seconds
+        while time.time()<time_end:
+            QtGui.QApplication.processEvents()    
+    
+    def newRun(self):
+        self.stopRunAcq=False
+        
+    def run(self):
+        
+        self.newStateCam.emit(True)
+        
+        for i in range (self.parent.nbShot):
+            
+            if self.stopRunAcq is not True :
+               
+                if i<self.parent.nbShot-1:
+                    self.newStateCam.emit(True)
+                    time.sleep(0.01)
+                else:
+                    self.newStateCam.emit(False)
+                    time.sleep(0.01)
+                data=0
+                
+                for m in range (self.parent.moyenne):
+                    
+                    dataSp=self.spectrometer.intensities()
+                    data=data+dataSp
+                    
+                data=data /self.parent.moyenne
+                
+                if np.max(data)>0:
+                    
+                    
+                    if self.stopRunAcq==True:
+                        pass
+                    else :
+                        
+                        self.newDataRun.emit(data)
+                time.sleep(0.1)  
+                
+                
+            else:
+                break
+        self.newStateCam.emit(False)
+        
+        
+        
+    def stopThreadOneAcq(self):
+        
+        #self.cam0.send_trigger()
+        self.stopRunAcq=True
 
         
+class ThreadRunAcq(QtCore.QThread):
+    
+    '''Second thread for controling continus acquisition independtly
+    '''
+    newDataRun=QtCore.Signal(object)
+    
+    def __init__(self, parent):
+        
+        super(ThreadRunAcq,self).__init__(parent)
+        self.parent=parent
+        self.spectrometer = parent.spectrometer
+        self.stopRunAcq=False
+        self.itrig= parent.itrig
+       
+        
+    def newRun(self):
+        self.stopRunAcq=False
+        
+    def run(self):
+        
+        while self.stopRunAcq is not True :
+            data=0
+            for m in range (self.parent.moyenne):
+                dataSp=self.spectrometer.intensities()
+                data=data+dataSp
+                    
+            data=data /self.parent.moyenne
+                
+            if np.max(data)>0:
+                
+                if self.stopRunAcq==True:
+                    pass
+                else :
+                    self.newDataRun.emit(data)
+            
+            
+    def stopThreadRunAcq(self):
+        #self.cam0.send_trigger()
+        self.stopRunAcq=True
+
+
+
+
 if __name__ == "__main__":
     
     appli = QApplication(sys.argv) 

@@ -1542,7 +1542,7 @@ class SEERESULT(QMainWindow) :
         self.fitMu=best_vals[1]
         self.fitSigma=best_vals[2]
         
-        self.fwhmLabelFitValue.setText(str(self.fitSigma*2.355))
+        self.fwhmLabelFitValue.setText(str(self.fitSigma*2.355))#2.355
             
     
     
