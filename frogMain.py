@@ -29,8 +29,8 @@ from seabreeze.spectrometers import Spectrometer, list_devices
 
 class FROG(QMainWindow) :
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self,parent=None):
+        super().__init__(parent)
         
         self.confFrog=QtCore.QSettings('confFrog.ini', QtCore.QSettings.IniFormat)
         p = pathlib.Path(__file__)
@@ -53,12 +53,15 @@ class FROG(QMainWindow) :
         self.iconSnap=pathlib.PurePosixPath(self.iconSnap)
         self.setWindowIcon(QIcon(self.icon+'LOA.png'))
         self.setWindowTitle('FROG ')
-        self.motorName="testMot1"
-        self.motorType="test"
+        self.motorName="Moteur0A"
+        self.motorType="Apt"
         self.configPath="./fichiersConfig/"
-        self.configMotName='configMoteurTest.ini'
+        self.configMotName='configMoteurApt.ini'
         self.motor=ONEMOTOR(mot0=self.motorName,motorTypeName0=self.motorType,unit=3,jogValue=1)
-        self.scanWidget=SCAN(MOT=self.motor,motor=self.motorName,configMotName=self.configPath+self.configMotName) # for the scan)
+        self.motor.startThread2()
+        
+        MOT=self.motor.MOT
+        self.scanWidget=SCAN(MOT=MOT,motor=self.motorName,configMotName=self.configPath+self.configMotName) # for the scan)
         listdevice=list_devices()
         self.spectrometer=Spectrometer(listdevice[0])
         print("spectrometer connected @",self.spectrometer)
@@ -69,6 +72,7 @@ class FROG(QMainWindow) :
         self.nbShot=1
         self.setup()
         self.actionButton()
+        
     def setup(self):
         
         hbox1=QHBoxLayout() # horizontal layout pour run snap stop
@@ -303,7 +307,7 @@ class FROG(QMainWindow) :
     def acquireOneImage(self):
         '''Start on acquisition
         '''
-        
+        print('acquire on image spectro')
         self.imageReceived=False
         self.runButton.setEnabled(False)
         self.runButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: gray ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconPlay,self.iconPlay))
@@ -312,7 +316,6 @@ class FROG(QMainWindow) :
         self.stopButton.setEnabled(True)
         self.stopButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: transparent ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconStop,self.iconStop) )
         self.trigg.setEnabled(False)
-        
         self.camIsRunnig=True
         self.threadOneAcq.newRun() # to set stopRunAcq=False
         self.threadOneAcq.start()

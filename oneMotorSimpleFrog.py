@@ -7,7 +7,7 @@ Created on Tue Apr 16 15:49:41 2019
 """
 
 
-#%%Import
+
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QApplication,QVBoxLayout,QHBoxLayout,QPushButton,QDoubleSpinBox,QToolButton
@@ -104,11 +104,11 @@ class ONEMOTOR(QWidget) :
         self.stepmotor=float(self.conf.value(self.motor+"/stepmotor"))
         self.butePos=float(self.conf.value(self.motor+"/buteePos"))
         self.buteNeg=float(self.conf.value(self.motor+"/buteeneg"))
-    
+        print('stepMotor',self.stepmotor)
     
         self.thread2=PositionThread(mot=self.MOT,motorType=self.motorType) # thread pour afficher position
         self.thread2.POS.connect(self.Position)
-        
+        self.thread2.POSREAL.connect(self.PositionReal)
         self.setup()
         ## initialisation of the jog value 
         if self.indexUnit==0: #  step
@@ -150,7 +150,12 @@ class ONEMOTOR(QWidget) :
         self.position=QLabel('1234567')
         self.position.setMaximumHeight(50)
         self.position.setMaximumWidth(80)
-        self.position.setStyleSheet("font: bold 20pt" )
+        self.position.setStyleSheet("font: bold 15pt" )
+        
+        self.positionR=QLabel('1234567')
+        self.positionR.setMaximumHeight(50)
+        self.positionR.setMaximumWidth(80)
+        self.positionR.setStyleSheet("font: bold 10pt;color:blue" )
         
         self.unitButton=QComboBox()
         self.unitButton.addItem('Step')
@@ -166,6 +171,7 @@ class ONEMOTOR(QWidget) :
         
         #hbox1.addWidget(pos)
         hbox1.addWidget(self.position)
+        hbox1.addWidget(self.positionR)
         hbox1.addWidget(self.unitButton)
         hbox1.addWidget(self.zeroButton)
         vbox1.addLayout(hbox1)
@@ -267,10 +273,11 @@ class ONEMOTOR(QWidget) :
     
     
     def pMove(self):# action jog +
-        print('jog+')
+        
         a=float(self.jogStep.value())
-        print(a)
+        
         a=float(a*self.unitChange)
+        
         b=self.MOT.position()
         if b+a<self.buteNeg :
             print( "STOP : Butée Positive")
@@ -315,8 +322,8 @@ class ONEMOTOR(QWidget) :
         if self.indexUnit==2: #  mm 
             self.unitChange=float((1000*self.stepmotor))
             self.unitName='mm'
-        if self.indexUnit==3: #  ps  double passage : 1 microns=6fs
-            self.unitChange=float(1000*self.stepmotor/0.0066666666) 
+        if self.indexUnit==3: #  fs  double passage : 0.9 microns=6fs
+            self.unitChange=float(self.stepmotor/6.6666666) 
             self.unitName='fs'
         if self.indexUnit==4: #  en degres
             self.unitChange=1 *self.stepmotor
@@ -334,7 +341,10 @@ class ONEMOTOR(QWidget) :
         #b=a # valeur en pas moteur pour sauvegarder en pas 
         a=round(a/self.unitChange,3) # valeur tenant compte du changement d'unite
         self.position.setText(str(a)) 
-    
+    def PositionReal(self,POSIREAL):
+        a=POSIREAL
+        a=round(a/self.unitChange,3) # valeur tenant compte du changement d'unite
+        self.positionR.setText(str(a)) 
     def closeEvent(self, event):
         """ 
         When closing the window
@@ -349,11 +359,12 @@ class ONEMOTOR(QWidget) :
         time.sleep(0.1)      
         
 
-#%%#################################################################################       
+       
 class PositionThread(QtCore.QThread):
     ### thread secondaire pour afficher la position
     import time #?
-    POS=QtCore.pyqtSignal(float) # signal transmit par le second thread au thread principal pour aff la position
+    POS=QtCore.pyqtSignal(float)
+    POSREAL=QtCore.pyqtSignal(float)# signal transmit par le second thread au thread principal pour aff la position
     def __init__(self,parent=None,mot='',motorType=''):
         super(PositionThread,self).__init__(parent)
         self.MOT=mot
@@ -367,10 +378,11 @@ class PositionThread(QtCore.QThread):
             else:
                 
                 Posi=(self.MOT.position())
-                time.sleep(1)
+                PosReal=self.MOT.positionReal()
+                time.sleep(0.3)
                 try :
                     self.POS.emit(Posi)
-                    
+                    self.POSREAL.emit(PosReal)
                     time.sleep(0.1)
                 except:
                     print('error emit')
@@ -386,8 +398,8 @@ class PositionThread(QtCore.QThread):
 
         
 if __name__ =='__main__':
-    motor0="testMot1"
-    motorType="test"
+    motor0="Moteur0A"
+    motorType="Apt"
     appli=QApplication(sys.argv)
     mot5=ONEMOTOR(mot0=motor0,motorTypeName0=motorType,nomWin='motorSimple',unit=1,jogValue=100)
     mot5.show()

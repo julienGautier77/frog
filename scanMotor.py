@@ -72,7 +72,7 @@ class SCAN(QWidget):
         self.unitBouton.addItem('Step')
         self.unitBouton.addItem('um')
         self.unitBouton.addItem('mm')
-        self.unitBouton.addItem('ps')
+        self.unitBouton.addItem('fs')
         self.unitBouton.addItem('°')
         self.unitBouton.setMaximumWidth(100)
         self.unitBouton.setMinimumWidth(100)
@@ -183,6 +183,7 @@ class SCAN(QWidget):
         
         
     def stopScan(self):
+        self.parent.acquireOneImage()
         self.threadScan.stopThread()
         self.MOT.stopMotor()
         self.lab_nbr_step.setEnabled(True)
@@ -257,7 +258,7 @@ class SCAN(QWidget):
         
         self.but_stop.setEnabled(True)
         self.but_stop.setStyleSheet("border-radius:20px;background-color: red")
-    
+        
     def unit(self):
         '''
         unit change mot foc
@@ -274,7 +275,7 @@ class SCAN(QWidget):
             self.unitChange=float((1000*self.stepmotor))
             self.unitName='mm'
         if ii==3: #  fs  double passage : 1 microns=6fs
-            self.unitChange=float(1000*self.stepmotor/0.0066666666) 
+            self.unitChange=float(self.stepmotor/6.6666666) 
             self.unitName='fs'
         if ii==4: #  en degres
             self.unitChange=1 *self.stepmotor
@@ -309,20 +310,22 @@ class ThreadScan(QtCore.QThread):
     def run(self):
         
         self.stop=False
-#        print('number of steps:', self.parent.nbStep,self.parent.unitName)
-#        print('Initial position:',self.parent.vInit,self.parent.unitName)
-#        print('final position:',self.parent.vFin,self.parent.unitName)
-#        print('step value',self.parent.vStep,self.parent.unitName)
-#        print('nb of shoot for one postion',self.parent.val_nbTir.value())
+        print('number of steps:', self.parent.nbStep,self.parent.unitName)
+        print('Initial position:',self.parent.vInit,self.parent.unitName)
+        print('final position:',self.parent.vFin,self.parent.unitName)
+        print('step value',self.parent.vStep,self.parent.unitName)
+        print('nb of shoot for one postion',self.parent.val_nbTir.value())
         self.vini=self.parent.vInit*self.parent.unitChange
         self.vfin=self.parent.vFin*self.parent.unitChange
         self.step=self.parent.vStep*self.parent.unitChange
         
+        print('step en mm',self.step)
         self.val_time=self.parent.val_time.value()
         print('timeouts',self.val_time)
         self.parent.MOT.move(self.vini)
         
         b=self.parent.MOT.position()
+        print(b)
         while b!=self.vini:
             if self.stop==True:
                 break
@@ -339,41 +342,44 @@ class ThreadScan(QtCore.QThread):
             if self.stop==True:
                 break
             else:
-                mv=int(mv)
+                
                 self.parent.MOT.move(mv)
                 b=self.parent.MOT.position()
-                b=int(b)
+                
                 while True:
                     if self.stop==True:
                         break
                     else :
                         b=self.parent.MOT.position()
-                        print (b,mv)
-                        if b==mv:
+                        time.sleep(0.1)
+                        print ('position',b,mv)
+                        if mv-0.001<b and b<=mv+0.001:
                             print( "position reached")
                             break
                 
                 for nu in range (0,int(self.parent.val_nbTir.value())):
                     nb+=1
                     print('acq spectro')
-                        
+                    self.parent.parent.acquireOneImage()
                     print('wait',self.val_time)
                     time.sleep(self.val_time)
-        print ("fin du scan")
 
+        print ("fin du scan")
+        self.parent.stopScan()
+        
     def stopThread(self):
         self.stop=True
-        print( "stop thread" )  
+        # print( "stop thread" )  
 
        
 if __name__=='__main__':
     appli=QApplication(sys.argv)
-    import moteurtest as test
-    motorType=test
-    motor="testMot1"
-    MOT=test.MOTORTEST(motor)
-    print('name',MOT.name())
-    s=SCAN(MOT=MOT,motor=motor,configMotName='./fichiersConfig/configMoteurTest.ini') # for the scan)
+    import moteurApt as apt
+    motorType=apt
+    motor="Moteur0A"
+    MOT=apt.MOTORAPT(motor)
+    
+    s=SCAN(MOT=MOT,motor=motor,configMotName='./fichiersConfig/configMoteurApt.ini') # for the scan)
         
     s.show()
     appli.exec_()
