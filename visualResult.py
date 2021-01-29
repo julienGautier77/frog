@@ -55,7 +55,9 @@ __author__=visu.__author__
 __all__=['SEERESULT']
 
 class SEERESULT(QMainWindow) :
-    '''open and plot file : 
+    
+    '''
+    open and plot file : 
         SEE(file='nameFile,path=pathFileName,confpath,confMot,name,aff)
         Make plot profile ands differents measurements(max,min mean...)
         Can open .spe .SPE .sif .TIFF files
@@ -288,7 +290,7 @@ class SEERESULT(QMainWindow) :
         
         self.checkBoxPlot=QAction(QtGui.QIcon(self.icon+"target.png"),'Cross On (ctrl+b to block ctrl+d to deblock)',self)
         self.checkBoxPlot.setCheckable(True)
-        self.checkBoxPlot.setChecked(False)
+        self.checkBoxPlot.setChecked(True)
         self.checkBoxPlot.triggered.connect(self.PlotXY)
         self.toolBar.addAction(self.checkBoxPlot)
         self.AnalyseMenu.addAction(self.checkBoxPlot)
@@ -472,8 +474,8 @@ class SEERESULT(QMainWindow) :
         #self.p1.setAspectLocked(True,ratio=1)
         self.p1.showAxis('right',show=False)
         self.p1.showAxis('top',show=False)
-        self.p1.showAxis('left',show=True)
-        self.p1.showAxis('bottom',show=True)
+        self.p1.showAxis('left',show=False)
+        self.p1.showAxis('bottom',show=False)
         
         if self.bloqKeyboard==True:
             self.vLine = pg.InfiniteLine(angle=90, movable=False,pen='r')
@@ -524,9 +526,6 @@ class SEERESULT(QMainWindow) :
         self.logActionX.triggered.connect(self.logMode)
         
         
-        
-        
-        
         ## main layout
         
         # vMainLayout=QVBoxLayout()
@@ -542,11 +541,15 @@ class SEERESULT(QMainWindow) :
         self.winPLOTY.showAxis('right',show=False)
         self.winPLOTY.showAxis('left',show=True)
         self.winPLOTY.getViewBox().invertY(False)
+        self.winPLOTY.setLabel('left','Wavlenght (nm) ')
         #self.winPLOTY.setContentsMargins(0,15,0,0)
         
         self.winPLOTX = self.winImage.addPlot(col=0,row=1)
         self.winPLOTX.setMaximumHeight(120)
-        self.winPLOTX.showAxis('bottom',show=True)
+        self.winPLOTX.showAxis('bottom',show=False)
+        self.winPLOTX.showAxis('left',show=False)
+        self.winPLOTX.showAxis('right',show=True)
+        self.winPLOTX.setLabel('top','Time (fs) ')
         #self.winPLOTX.setContentsMargins(0,0,20,0) #left top right bottom
         penFit=pg.mkPen(color='r',width=2)
         self.pFit=self.winPLOTX.plot(pen=penFit)
@@ -586,16 +589,16 @@ class SEERESULT(QMainWindow) :
         #self.plotLine=pg.LineSegmentROI(positions=((self.dimx/2-100,self.dimy/2),(self.dimx/2+100,self.dimy/2)), movable=True,angle=0,pen='b')
         self.plotLine=pg.LineSegmentROI(positions=((0,200),(200,200)), movable=True,angle=0,pen='w')
         #self.plotLine=pg.PolyLineROI(positions=((0,200),(200,200),(300,200)), movable=True,angle=0,pen='w')
-        self.plotRect=pg.RectROI([self.xc,self.yc],[4*self.rx,self.ry],pen='g')
-        self.plotCercle=pg.CircleROI([self.xc,self.yc],[80,80],pen='g')
-        self.plotRectZoom=pg.RectROI([self.xc,self.yc],[4*self.rx,self.ry],pen='w')
+        self.plotRect=pg.RectROI([self.xc,self.yc],[1*self.rx,self.ry],pen='g')
+        self.plotCercle=pg.CircleROI([self.xc,self.yc],[10,10],pen='g')
+        self.plotRectZoom=pg.RectROI([self.xc,self.yc],[1*self.rx,self.ry],pen='w')
         
         self.ROICross=pg.RectROI([self.xc,self.yc],[self.dimx-20,self.ry],pen='r')
         #self.plotRect.addScaleRotateHandle([0.5, 1], [0.5, 0.5])
         #self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5()) # dark style
         
         
-        self.newDataReceived(self.data)
+        # self.newDataReceived(self.data)
         
     def actionButton(self):
         # action of button
@@ -833,7 +836,7 @@ class SEERESULT(QMainWindow) :
     def Display(self,data):
         #  display the data and refresh all the calculated things and plots
         self.data=data
-        
+        self.zoomRectupdate() # update rect
         
         if self.checkBoxBg.isChecked()==True and self.winOpt.dataBgExist==True:
             try :
@@ -953,7 +956,7 @@ class SEERESULT(QMainWindow) :
             self.fileName.setText(nomFichier)
     
         
-        self.zoomRectupdate() # update rect
+       
         
     def mouseClick(self): # block the cross if mousse button clicked
         
@@ -1013,15 +1016,16 @@ class SEERESULT(QMainWindow) :
     
     
     def CoupeRect(self):
+        
         if self.checkBoxPlotRect.isChecked()==1:
-            
+
             self.dataRect=(self.ROICross.getArrayRegion(self.data,self.imh))
             self.dataRect=self.dataRect.mean(axis=1)
             
             if self.axisXPixel==True:
                 self.xRect=np.arange(self.ROICross.pos()[0],self.ROICross.pos()[0]+self.ROICross.size()[0],1)#
             else:
-                self.xRect=self.axis[self.ROICross.pos()[0]:self.ROICross.pos()[0]]
+                self.xRect=self.axisX[self.ROICross.pos()[0]:self.ROICross.pos()[0]]
             self.curve3.setData(self.xRect,self.dataRect,clear=True)
             
             self.setFit(data=self.dataRect,xMat=self.xRect)
@@ -1071,68 +1075,73 @@ class SEERESULT(QMainWindow) :
             if self.winOpt.checkBoxAxeScale.isChecked()==1: # scale axe on 
                 self.label_Cross.setText('x='+ str(round(int(self.xc)*self.winOpt.stepX,2)) + '  um'+' y=' + str(round(int(self.yc)*self.winOpt.stepY,2)) +' um')
             else : 
-                self.label_Cross.setText('x='+ str(int(self.xc)) + ' y=' + str(int(self.yc)) )
+                self.label_Cross.setText('x='+ str(self.axisX[int(self.xc)]) + ' fs  '+ ' y=' + str(self.axisY[int(self.yc)]) +' nm' )
                 
             dataCross=round(dataCross,3) # take data  value  on the cross
             self.label_CrossValue.setText(' v.=' + str(dataCross))
             
             
-            coupeXnorm=(self.data.shape[0]/10)*(coupeX/coupeXMax) # normalize the curves
+            # coupeXnorm=(self.data.shape[0]/10)*(coupeX/coupeXMax) # normalize the curves
             
             
-            self.curve2.setData(coupeX,self.axisY,clear=True)#(20+self.xminR+coupeXnorm,yyy,clear=True)
-    
-              
-            coupeYnorm=(self.data.shape[1]/10)*(coupeY/coupeYMax)
+            self.curve2.setData(x=coupeX,y=self.axisY,clear=True)#(20+self.xminR+coupeXnorm,yyy,clear=True)
+            self.winPLOTY.setYRange(min(self.axisY),max(self.axisY))
+            self.winPLOTY.setXRange(min(coupeX),max(coupeX))
+            # coupeYnorm=(self.data.shape[1]/10)*(coupeY/coupeYMax)
             
-            self.curve3.setData(self.axisY,coupeY,clear=True)#20+self.yminR+coupeYnorm,clear=True)
             
+            
+            self.curve3.setData(x=self.axisX,y=coupeY,clear=True)#20+self.yminR+coupeYnorm,clear=True)
+            self.winPLOTX.setXRange(min(self.axisX),max(self.axisX))
+            self.winPLOTX.setYRange(min(coupeY),max(coupeY))
+                                    
             ###  fwhm on the  X et Y curves if max  >20 counts if checked in winOpt
             
             
-            if self.winOpt.checkBoxFwhm.isChecked()==1: # show fwhm values on graph
-                xCXmax=np.amax(coupeXnorm) # max
-                if xCXmax>20:
-                    try :
-                        fwhmX=self.fwhm(yyy, coupeXnorm, order=3)[0]
+            # if self.winOpt.checkBoxFwhm.isChecked()==1: # show fwhm values on graph
+            #     xCXmax=np.amax(coupeXnorm) # max
+            #     if xCXmax>20:
+            #         try :
+            #             fwhmX=self.fwhm(yyy, coupeXnorm, order=3)[0]
                         
-                    except : fwhmX=None
-                    if fwhmX==None:
-                        self.textX.setText('')
-                    else:
-                        if self.winOpt.checkBoxAxeScale.isChecked()==1:
-                            self.textX.setText('fwhm='+str(round(fwhmX*self.winOpt.stepX,2))+' um',color='w')
-                        else :
+            #         except : fwhmX=None
+            #         if fwhmX==None:
+            #             self.textX.setText('')
+            #         else:
+            #             if self.winOpt.checkBoxAxeScale.isChecked()==1:
+            #                 self.textX.setText('fwhm='+str(round(fwhmX*self.winOpt.stepX,2))+' um',color='w')
+            #             else :
                             
-                           self.textX.setText('fwhm='+str(round(fwhmX,2)),color='w')
-                    yCXmax=yyy[coupeXnorm.argmax()]
+            #                self.textX.setText('fwhm='+str(round(fwhmX,2)),color='w')
+            #         yCXmax=yyy[coupeXnorm.argmax()]
                     
-                    self.textX.setPos(xCXmax+70,yCXmax+60)
+            #         self.textX.setPos(xCXmax+70,yCXmax+60)
                 
-                yCYmax=np.amax(coupeYnorm) # max
+            #     yCYmax=np.amax(coupeYnorm) # max
                 
-                if yCYmax>20:
-                    try:
-                        fwhmY=self.fwhm(xxx, coupeYnorm, order=3)[0]
-                    except :fwhmY=None
-                    xCYmax=xxx[coupeYnorm.argmax()]
-                    if fwhmY==None:
-                        self.textY.setText('',color='w')
-                    else:
-                        if self.winOpt.checkBoxAxeScale.isChecked()==1:
-                            self.textY.setText('fwhm='+str(round(fwhmY*self.winOpt.stepY,2))+' um',color='w')
-                        else:
-                            self.textY.setText('fwhm='+str(round(fwhmY,2)),color='w')
+            #     if yCYmax>20:
+            #         try:
+            #             fwhmY=self.fwhm(xxx, coupeYnorm, order=3)[0]
+            #         except :fwhmY=None
+            #         xCYmax=xxx[coupeYnorm.argmax()]
+            #         if fwhmY==None:
+            #             self.textY.setText('',color='w')
+            #         else:
+            #             if self.winOpt.checkBoxAxeScale.isChecked()==1:
+            #                 self.textY.setText('fwhm='+str(round(fwhmY*self.winOpt.stepY,2))+' um',color='w')
+            #             else:
+            #                 self.textY.setText('fwhm='+str(round(fwhmY,2)),color='w')
                             
-                    self.textY.setPos(xCYmax-60,yCYmax+70)   
+            #         self.textY.setPos(xCYmax-60,yCYmax+70)   
                     
             try:
-                self.fwhmY=self.fwhm(xxx, coupeYnorm, order=3)[0]
+                self.fwhmY=self.fwhm(self.axisX, coupeY, order=3)[0]
                 self.fwhmLabelValue.setText(str(self.fwhmY))
             except:
                 self.fwhmLabelValue.setText('.....')
-            
-        self.setFit(data=self.coupeY,xMat=xxx)
+        
+        try :self.setFit(data=self.coupeY,xMat=self.axisX)
+        except: pass
     
     
     def PlotXYRect(self):
@@ -1410,9 +1419,12 @@ class SEERESULT(QMainWindow) :
         
         self.axisX=axisX
         self.axisY=axisY
+        print('X',self.axisX,np.shape(self.axisX))
+        print('Y',self.axisY,np.shape(self.axisY))
         if self.axisX is None:
             self.axisXPixel=True
-        
+        else:
+            self.axisXPixel=False
         self.Display(self.data)
         
     
@@ -1463,10 +1475,10 @@ class SEERESULT(QMainWindow) :
             self.p1.setXRange(self.xZoomMin,self.xZoomMax)
             self.p1.setYRange(self.yZoomMin,self.yZoomMax)
             #self.p1.setAspectLocked(True)
-        # else:
-        #     self.p1.setYRange(0,self.dimy)
-        #     self.p1.setXRange(0,self.dimx)
-        #     print('ra')
+        else:
+            self.p1.setYRange(0,self.dimy)
+            self.p1.setXRange(0,self.dimx)
+            print('ra',self.dimx,self.dimy)
             
     def flipAct (self):
         
@@ -1518,10 +1530,8 @@ class SEERESULT(QMainWindow) :
     
     def setFit(self,data,xMat):
         
-        
-        
         xxx=xMat
-            
+        # print('matx',xxx)    
         try :
             Datafwhm,xDataMax=self.fwhm(xxx,data)
         except :

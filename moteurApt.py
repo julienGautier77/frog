@@ -11,7 +11,7 @@ class MOTORAPT():
         #super(MOTORNEWPORT, self).__init__()
         self.moteurname=mot1
         self.numMoteur=int(confApt.value(self.moteurname+'/numMoteur'))
-        print('serial number APt controler:',self.numMoteur)
+        print('Serial number APT controler (Thorlabs) :',self.numMoteur)
         self.aptMotor=core.Motor(self.numMoteur)
         
     def stopMotor(self): # stop le moteur motor
@@ -20,7 +20,7 @@ class MOTORAPT():
     
     def rmove(self,pas,vitesse=1000):
         actualPosition=float(confApt.value(self.moteurname+'/Pos'))
-        print('pasAPT en mm',pas)
+        # print('pasAPT en mm',pas)
         position=actualPosition+pas
         # print('pas',pas)
         self.aptMotor.move_by(pas)
@@ -30,7 +30,7 @@ class MOTORAPT():
         #return recu
 
     def move(self,position,vitesse=1000):
-        print('move absalute')
+        # print('move absalute')
         actualPosition=float(confApt.value(self.moteurname+'/Pos'))
         pas=(position)-(actualPosition)
         
@@ -54,5 +54,7 @@ class MOTORAPT():
     def setzero(self):
         confApt.setValue(self.moteurname+"/Pos",0)
         
-
+    def fini(self):
+        self.aptMotor.closeLib()
+        print('close lib APT')
     

@@ -53,23 +53,36 @@ class FROG(QMainWindow) :
         self.iconSnap=pathlib.PurePosixPath(self.iconSnap)
         self.setWindowIcon(QIcon(self.icon+'LOA.png'))
         self.setWindowTitle('FROG ')
+        
         self.motorName="Moteur0A"
         self.motorType="Apt"
         self.configPath="./fichiersConfig/"
         self.configMotName='configMoteurApt.ini'
+        
+        self.confpath=str(p.parent) + sepa
+        print('confpath',self.confpath)
+        
+        
         self.motor=ONEMOTOR(mot0=self.motorName,motorTypeName0=self.motorType,unit=3,jogValue=1)
         self.motor.startThread2()
         
         MOT=self.motor.MOT
         self.scanWidget=SCAN(MOT=MOT,motor=self.motorName,configMotName=self.configPath+self.configMotName) # for the scan)
-        listdevice=list_devices()
+        
+        
+        
+        listdevice=list_devices() ## open device flame spectrometer 
         self.spectrometer=Spectrometer(listdevice[0])
         print("spectrometer connected @",self.spectrometer)
         self.wavelengths=self.spectrometer.wavelengths() # array Wavelengths of the spectrometer 
         
         
+        self.MatData=[]
+        self.MatFs=[]
+        self.position=0
         self.moyenne=1
         self.nbShot=1
+        self.row=0
         self.setup()
         self.actionButton()
         
@@ -236,12 +249,13 @@ class FROG(QMainWindow) :
         
         self.tabs.addTab(self.tab0,'   Spectro & Motors    ')
         
-        WidgetResult=SEERESULT()
+        
+        self.WidgetResult=SEERESULT(confpath=self.confpath+'confFrog.ini') # graph 2D data vs motor position
         
         # self.hresultLayout=QHBoxLayout()
         # # self.hresultLayout.addWidget(self.visualisation)
         # WidgetResult.setLayout(self.hresultLayout)
-        self.tab1=WidgetResult
+        self.tab1=self.WidgetResult
         
         self.tabs.addTab(self.tab1,'    Results    ')
         
@@ -263,12 +277,20 @@ class FROG(QMainWindow) :
         self.shutterBox.editingFinished.connect(self.shutter)    
         self.hSliderShutter.sliderReleased.connect(self.mSliderShutter)
         self.moyBox.editingFinished.connect(self.MoyenneAct)    
+        self.scanWidget.acqMain.connect(self.acquireScan)
+        self.scanWidget.scanStop.connect(self.endScan)
         
+        self.scanWidget.startOn.connect(self.ResetData)
         # self.trigg.currentIndexChanged.connect(self.trigger)
     def MoyenneAct(self):
         self.moyenne=(self.moyBox.value())
         
-    
+    def ResetData(self):
+        ##◙ reset data when scan start
+        self.MatData=[]
+        self.MatFs=[]
+        print('reset DATMAT')
+        
     def shutter (self):
         '''
         set exposure time 
@@ -303,7 +325,14 @@ class FROG(QMainWindow) :
         self.threadRunAcq.newRun() # to set stopRunAcq=False
         self.threadRunAcq.start()
         self.camIsRunnig=True
-        
+    
+    def acquireScan(self,pos,nbShoot):
+        #acquire on image with scan program
+        self.nbShoot=nbShoot # numero du shoot
+        self.acquireOneImage()
+        self.position=pos # on recupere la valeur de la postion moteur a chaque acquisition
+       
+    
     def acquireOneImage(self):
         '''Start on acquisition
         '''
@@ -319,14 +348,28 @@ class FROG(QMainWindow) :
         self.camIsRunnig=True
         self.threadOneAcq.newRun() # to set stopRunAcq=False
         self.threadOneAcq.start()
+    
         
+    def endScan (self):
+        # at the end of the scan we plot MatData( 2d matrix of specta) vs MatFs (vector of the position of the motor) 
+        self.MatDataNumpy=np.array(self.MatData)
+        self.MatFs=np.array(self.MatFs)
+        self.wavelengths=np.array(self.wavelengths)
+        self.WidgetResult.newDataReceived(self.MatDataNumpy,axisX=self.MatFs,axisY=self.wavelengths)
+    
     def stateCam(self,state):
         self.camIsRunnig=state
-        print(state)
+        
     
     def newImageReceived(self,data):
         self.data=data
+       
         self.graph.PLOT(self.data,axis=self.wavelengths)
+       
+        # self.MatData=np.append(self.MatData,self.data)
+        self.MatData.append(self.data)
+       
+        self.MatFs.append(self.position)
         if self.camIsRunnig is False:
             self.stopAcq()
     
@@ -355,7 +398,12 @@ class FROG(QMainWindow) :
         self.trigg.setEnabled(True)  
         
         self.threadRunAcq.stopThreadRunAcq()
-
+    
+    def closeEvent(self,event):
+        # when the window is closed
+        # to do close motor and spectro
+        print('close')
+        
 class ThreadOneAcq(QtCore.QThread):
     
     '''Second thread for controling one or more  acquisition independtly

@@ -6,11 +6,10 @@ Created on Mon Apr 22 20:23:31 2019
 @author: juliengautier
 """
 
-#%%Import
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication,QSizePolicy
 from PyQt5.QtWidgets import QWidget,QMessageBox,QLineEdit,QFrame
-from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout,QPushButton,QGridLayout,QDoubleSpinBox
+from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout,QPushButton,QGridLayout,QDoubleSpinBox,QProgressBar
 from PyQt5.QtWidgets import QComboBox,QCheckBox,QLabel
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
@@ -20,6 +19,10 @@ import numpy as np
 
 
 class SCAN(QWidget):
+    acqMain=QtCore.pyqtSignal(float,int)
+    startOn=QtCore.pyqtSignal(bool)
+    scanStop=QtCore.pyqtSignal(bool)
+    
     
     def __init__(self, MOT='',motor='',configMotName='',parent=None):
         
@@ -38,12 +41,12 @@ class SCAN(QWidget):
         
         self.indexUnit=3 #fs
         self.name=str(self.conf.value(self.motor+"/Name"))
-        
+        self.threadScan=ThreadScan(self)
         self.stepmotor=float(self.conf.value(self.motor+"/stepmotor"))
         self.setup()
         self.actionButton()
         self.unit()
-        self.threadScan=ThreadScan(self)
+       
         self.threadScan.nbRemain.connect(self.Remain)
         self.setWindowIcon(QIcon('./icons/LOA.png'))
         self.setWindowTitle('Scan'+' : '+ self.name)
@@ -85,8 +88,8 @@ class SCAN(QWidget):
         
         hboxRemain.addWidget(lab_nbStepRemain)
         hboxRemain.addWidget(self.val_nbStepRemain)
-        
-        
+        self.progressBar=QProgressBar()
+        hboxRemain.addWidget(self.progressBar)
         
         sizeWidth=70
         self.lab_nbr_step = QLabel('nb of step :')
@@ -94,7 +97,7 @@ class SCAN(QWidget):
         self.val_nbr_step.setDecimals(0)
         self.val_nbr_step.setMaximum(10000)
         self.val_nbr_step.setMinimum(1)
-        self.val_nbr_step.setValue=10
+        self.val_nbr_step.setValue(20)
         self.val_nbr_step.setMaximumWidth(sizeWidth)
         
         self.lab_step = QLabel("step value")
@@ -102,6 +105,7 @@ class SCAN(QWidget):
         self.val_step.setDecimals(0)
         self.val_step.setMaximum(10000)
         self.val_step.setMinimum(-10000)
+        self.val_step.setValue(50)
         self.val_step.setMaximumWidth(sizeWidth)
         
         self.lab_ini = QLabel('ini value')
@@ -116,7 +120,7 @@ class SCAN(QWidget):
         self.val_fin.setDecimals(0)
         self.val_fin.setMaximum(10000)
         self.val_fin.setMinimum(-10000)
-        self.val_fin.setValue(100)
+        self.val_fin.setValue(1000)
         self.val_fin.setMaximumWidth(sizeWidth)
         
         self.lab_nbTir=QLabel('Nb Average')
@@ -130,7 +134,7 @@ class SCAN(QWidget):
         self.val_time=QDoubleSpinBox()
         self.val_time.setSuffix(" %s" % 's')
         self.val_time.setMaximum(10)
-        self.val_time.setValue(2)
+        self.val_time.setValue(0.2)
         self.val_time.setMaximumWidth(sizeWidth)
         
         self.but_start = QPushButton('Start')
@@ -176,14 +180,18 @@ class SCAN(QWidget):
         self.val_step.editingFinished.connect(self.changeFinal)
         self.but_start.clicked.connect(self.startScan)
         self.but_stop.clicked.connect(self.stopScan)
+        self.threadScan.nbRemain.connect(self.Remain)
+        self.threadScan.acqScan.connect(self.Acq)
         
         
         
-        
+    def Acq(self,pos,nbShoot):
+        print('position acquise',pos/self.unitChange,self.unitChange,self.unitName)
+        self.acqMain.emit(pos/self.unitChange,nbShoot) # emit signal to acquire and emit the shot number 
         
         
     def stopScan(self):
-        self.parent.acquireOneImage()
+        
         self.threadScan.stopThread()
         self.MOT.stopMotor()
         self.lab_nbr_step.setEnabled(True)
@@ -202,26 +210,21 @@ class SCAN(QWidget):
         
         self.but_stop.setEnabled(False)
         self.but_stop.setStyleSheet("border-radius:20px;background-color: red")
+        self.scanStop.emit(True) # emit signal at the end of the scan
+        print('stop scan')
         
         
+    def Remain(self,nbstepdone,shotmax)   :
         
-    def Remain(self,nbstepdone)   :
         print('remain',nbstepdone,self.nbStep)
-        
-        self.val_nbStepRemain.setText(str((self.nbStep*self.val_nbShoot)-nbstepdone))
-        
-        if self.nbStep*self.val_nbShoot==nbstepdone:
-            print ('fin scan')
-            self.stopScan()
+        self.progressBar.setMaximum(shotmax)
+        self.val_nbStepRemain.setText(str(nbstepdone) )  #Ì(str((self.nbStep*self.val_nbShoot)-nbstepdone))
+        self.progressBar.setValue(int(shotmax-nbstepdone))
+        # if self.nbStep*self.val_nbShoot==nbstepdone:
+        #     # print ('fin scan')
+        #     self.stopScan()
             
-    def RemainShoot(self,nbstepdone)   :
-        print('remain shoot',nbstepdone,self.nbStep)
-        
-        self.val_nbStepRemain.setText(str((self.val_nbShoot)-nbstepdone))
-        
-        if self.val_nbShoot==nbstepdone:
-            print ('fin scan multi Average')
-            self.stopScan()
+    
             
     def stepChange(self):
         self.nbStep=self.val_nbr_step.value()
@@ -258,6 +261,8 @@ class SCAN(QWidget):
         
         self.but_stop.setEnabled(True)
         self.but_stop.setStyleSheet("border-radius:20px;background-color: red")
+        self.startOn.emit(True) #emit signal at the end of the scan
+        
         
     def unit(self):
         '''
@@ -300,7 +305,8 @@ class SCAN(QWidget):
         
 class ThreadScan(QtCore.QThread):
    
-    nbRemain=QtCore.pyqtSignal(float)
+    nbRemain=QtCore.pyqtSignal(float,float)
+    acqScan=QtCore.pyqtSignal(float,int)
     
     def __init__(self, parent=None):
         super(ThreadScan,self).__init__(parent)
@@ -308,24 +314,25 @@ class ThreadScan(QtCore.QThread):
         self.stop=False
 
     def run(self):
-        
+        print('start scan' )
         self.stop=False
-        print('number of steps:', self.parent.nbStep,self.parent.unitName)
-        print('Initial position:',self.parent.vInit,self.parent.unitName)
-        print('final position:',self.parent.vFin,self.parent.unitName)
-        print('step value',self.parent.vStep,self.parent.unitName)
-        print('nb of shoot for one postion',self.parent.val_nbTir.value())
+        
+        # print('number of steps:', self.parent.nbStep,self.parent.unitName)
+        # print('Initial position:',self.parent.vInit,self.parent.unitName)
+        # print('final position:',self.parent.vFin,self.parent.unitName)
+        # print('step value',self.parent.vStep,self.parent.unitName)
+        # print('nb of shoot for one postion',self.parent.val_nbTir.value())
         self.vini=self.parent.vInit*self.parent.unitChange
         self.vfin=self.parent.vFin*self.parent.unitChange
         self.step=self.parent.vStep*self.parent.unitChange
         
-        print('step en mm',self.step)
+        # print('step en mm',self.step)
         self.val_time=self.parent.val_time.value()
-        print('timeouts',self.val_time)
+        # print('timeouts',self.val_time)
         self.parent.MOT.move(self.vini)
         
         b=self.parent.MOT.position()
-        print(b)
+        # print(b)
         while b!=self.vini:
             if self.stop==True:
                 break
@@ -333,12 +340,15 @@ class ThreadScan(QtCore.QThread):
                 time.sleep(1)
                 b=self.parent.MOT.position()
         time.sleep(0.5)
-        print(self.vini,self.vfin,self.step)
-        movement=np.arange(self.vini+self.step,self.vfin+self.step,self.step)
+        # print(self.vini,self.vfin,self.step)
+        movement=np.arange(float(self.vini),float(self.vfin)+float(self.step),float(self.step))
         print (movement,"start scan",self.parent.unitChange)
-        nb=0
+        nb=0 # numero du tir
+        mv=0
+        nbTotShot=np.size(movement)*self.parent.val_nbTir.value()
+        print('nombre total d acquisition',nbTotShot)
         for mv in movement:
-            
+            print (mv)
             if self.stop==True:
                 break
             else:
@@ -346,22 +356,24 @@ class ThreadScan(QtCore.QThread):
                 self.parent.MOT.move(mv)
                 b=self.parent.MOT.position()
                 
-                while True:
-                    if self.stop==True:
-                        break
-                    else :
-                        b=self.parent.MOT.position()
-                        time.sleep(0.1)
-                        print ('position',b,mv)
-                        if mv-0.001<b and b<=mv+0.001:
-                            print( "position reached")
-                            break
+                # while True:
+                #     if self.stop==True:
+                #         break
+                #     else :
+                #         b=self.parent.MOT.position()
+                #         time.sleep(0.1)
+                #         # print ('position',b,mv)
+                #         if mv-0.001<b and b<=mv+0.001:
+                #             print( "position reached")
+                #             break 
                 
                 for nu in range (0,int(self.parent.val_nbTir.value())):
-                    nb+=1
-                    print('acq spectro')
-                    self.parent.parent.acquireOneImage()
-                    print('wait',self.val_time)
+                    
+                    print('acq spectro !!!')
+                    self.acqScan.emit(self.parent.MOT.position(),nb)
+                    nb=nb+1
+                    self.nbRemain.emit(nbTotShot-nb,nbTotShot)
+                    print('wait',self.val_time,self.stop)
                     time.sleep(self.val_time)
 
         print ("fin du scan")

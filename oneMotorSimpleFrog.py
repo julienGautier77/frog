@@ -345,6 +345,7 @@ class ONEMOTOR(QWidget) :
         a=POSIREAL
         a=round(a/self.unitChange,3) # valeur tenant compte du changement d'unite
         self.positionR.setText(str(a)) 
+    
     def closeEvent(self, event):
         """ 
         When closing the window
@@ -355,6 +356,7 @@ class ONEMOTOR(QWidget) :
         
     def fini(self): # a la fermeture de la fenetre on arrete le thread secondaire
         self.thread2.stopThread()
+        self.MOT.fini()
         self.isWinOpen=False
         time.sleep(0.1)      
         
