@@ -73,7 +73,7 @@ class FROG(QMainWindow) :
         
         listdevice=list_devices() ## open device flame spectrometer 
         self.spectrometer=Spectrometer(listdevice[0])
-        print("spectrometer connected @",self.spectrometer)
+        print("spectrometer connected @",self.spectrometer,print(self.spectrometer.stray_light_coeffs()))
         self.wavelengths=self.spectrometer.wavelengths() # array Wavelengths of the spectrometer 
         
         

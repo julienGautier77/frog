@@ -593,7 +593,7 @@ class SEERESULT(QMainWindow) :
         self.plotCercle=pg.CircleROI([self.xc,self.yc],[10,10],pen='g')
         self.plotRectZoom=pg.RectROI([self.xc,self.yc],[1*self.rx,self.ry],pen='w')
         
-        self.ROICross=pg.RectROI([self.xc,self.yc],[self.dimx-20,self.ry],pen='r')
+        self.ROICross=pg.RectROI([0,0],[10,10],pen='r')
         #self.plotRect.addScaleRotateHandle([0.5, 1], [0.5, 0.5])
         #self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5()) # dark style
         
@@ -1025,7 +1025,10 @@ class SEERESULT(QMainWindow) :
             if self.axisXPixel==True:
                 self.xRect=np.arange(self.ROICross.pos()[0],self.ROICross.pos()[0]+self.ROICross.size()[0],1)#
             else:
-                self.xRect=self.axisX[self.ROICross.pos()[0]:self.ROICross.pos()[0]]
+                print('position croix',self.ROICross.pos(),self.ROICross.size())
+                
+                self.xRect=self.axisX[int(round(self.ROICross.pos()[0])):int(round(self.ROICross.pos()[0])+self.ROICross.size()[0])+1]
+                print('lens',np.shape(self.xRect),np.shape(self.dataRect))
             self.curve3.setData(self.xRect,self.dataRect,clear=True)
             
             self.setFit(data=self.dataRect,xMat=self.xRect)
@@ -1384,6 +1387,8 @@ class SEERESULT(QMainWindow) :
             img_PIL = Image.fromarray(self.dataS)
 
             img_PIL.save(str(fname[0])+'.TIFF',format='TIFF')
+            np.savetxt(str(fichier)+'_Time'+'.txt',self.axisX )
+            np.savetxt(str(fichier)+'_Wavelength'+'.txt',self.axisY )
             self.fileName.setText(fname[0]+'.TIFF') 
             
         else :
@@ -1397,6 +1402,8 @@ class SEERESULT(QMainWindow) :
             self.conf.setValue(self.name+"/path",self.path)
             time.sleep(0.1)
             np.savetxt(str(fichier)+'.txt',self.dataS)
+            np.savetxt(str(fichier)+'_Time'+'.txt',self.axisX )
+            np.savetxt(str(fichier)+'_Wavelength'+'.txt',self.axisY )
             self.fileName.setText(fname[0]+str(ext))
 
   
@@ -1524,7 +1531,10 @@ class SEERESULT(QMainWindow) :
     
     def gauss(self,x, A, mu, sigma ,B):
     
-        return A*np.exp(-(x-mu)**2/(2*sigma**2))+B
+        try :
+            gau=A*np.exp(-(x-mu)**2/(2*sigma**2))+B
+        except : gau=0
+        return gau
     
     
     
@@ -1539,21 +1549,22 @@ class SEERESULT(QMainWindow) :
             
         ymaxx=data[int(xDataMax)]
         init_vals = [ymaxx, xDataMax, Datafwhm,0]  # for [A, mu, sigma]
-    
-        best_vals, covar = curve_fit(self.gauss, xxx, data, p0=init_vals)
+        try : 
+            best_vals, covar = curve_fit(self.gauss, xxx, data, p0=init_vals)
         
-        y_fit = self.gauss(xxx, best_vals[0], best_vals[1], best_vals[2],best_vals[3])
+            y_fit = self.gauss(xxx, best_vals[0], best_vals[1], best_vals[2],best_vals[3])
         
-        self.pFit.setData(x=xxx,y=y_fit)
+            self.pFit.setData(x=xxx,y=y_fit)
         
         
         
-        self.fitA=best_vals[0]
-        self.fitMu=best_vals[1]
-        self.fitSigma=best_vals[2]
+            self.fitA=best_vals[0]
+            self.fitMu=best_vals[1]
+            self.fitSigma=best_vals[2]
         
-        self.fwhmLabelFitValue.setText(str(self.fitSigma*2.355))#2.355
-            
+            self.fwhmLabelFitValue.setText(str(self.fitSigma*2.355))#2.355
+        except :
+            self.fwhmLabelFitValue.setText('...')
     
     
     def autoScale(self):
