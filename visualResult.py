@@ -981,7 +981,7 @@ class SEERESULT(QMainWindow) :
                     mousePoint = self.vb.mapSceneToView(pos)
                     self.xMouse = (mousePoint.x())
                     self.yMouse= (mousePoint.y())
-                    if ((self.xMouse>0 and self.xMouse<self.dimx-1) and (self.yMouse>0 and self.yMouse<self.dimy-1) ):
+                    if ((self.xMouse>0 and self.xMouse<self.dimx) and (self.yMouse>0 and self.yMouse<self.dimy) ):
                             self.xc = self.xMouse
                             self.yc= self.yMouse  
                             self.vLine.setPos(self.xc)
@@ -1025,10 +1025,10 @@ class SEERESULT(QMainWindow) :
             if self.axisXPixel==True:
                 self.xRect=np.arange(self.ROICross.pos()[0],self.ROICross.pos()[0]+self.ROICross.size()[0],1)#
             else:
-                print('position croix',self.ROICross.pos(),self.ROICross.size())
+                # print('position croix',self.ROICross.pos(),self.ROICross.size())
                 
                 self.xRect=self.axisX[int(round(self.ROICross.pos()[0])):int(round(self.ROICross.pos()[0])+self.ROICross.size()[0])+1]
-                print('lens',np.shape(self.xRect),np.shape(self.dataRect))
+                # print('lens',np.shape(self.xRect),np.shape(self.dataRect))
             self.curve3.setData(self.xRect,self.dataRect,clear=True)
             
             self.setFit(data=self.dataRect,xMat=self.xRect)
@@ -1426,8 +1426,8 @@ class SEERESULT(QMainWindow) :
         
         self.axisX=axisX
         self.axisY=axisY
-        print('X',self.axisX,np.shape(self.axisX))
-        print('Y',self.axisY,np.shape(self.axisY))
+        # print('X',self.axisX,np.shape(self.axisX))
+        # print('Y',self.axisY,np.shape(self.axisY))
         if self.axisX is None:
             self.axisXPixel=True
         else:
@@ -1485,7 +1485,7 @@ class SEERESULT(QMainWindow) :
         else:
             self.p1.setYRange(0,self.dimy)
             self.p1.setXRange(0,self.dimx)
-            print('ra',self.dimx,self.dimy)
+            
             
     def flipAct (self):
         

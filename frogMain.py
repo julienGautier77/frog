@@ -55,9 +55,9 @@ class FROG(QMainWindow) :
         self.setWindowTitle('FROG ')
         
         self.motorName="Moteur0A"
-        self.motorType="Apt"
+        self.motorType="A2V"
         self.configPath="./fichiersConfig/"
-        self.configMotName='configMoteurApt.ini'
+        self.configMotName='configMoteurA2V.ini'
         
         self.confpath=str(p.parent) + sepa
         print('confpath',self.confpath)
@@ -282,14 +282,15 @@ class FROG(QMainWindow) :
         
         self.scanWidget.startOn.connect(self.ResetData)
         # self.trigg.currentIndexChanged.connect(self.trigger)
+    
     def MoyenneAct(self):
         self.moyenne=(self.moyBox.value())
-        
+        print(self.moyenne)
     def ResetData(self):
         ##◙ reset data when scan start
         self.MatData=[]
         self.MatFs=[]
-        print('reset DATMAT')
+        # print('reset DATMAT')
         
     def shutter (self):
         '''
@@ -300,7 +301,9 @@ class FROG(QMainWindow) :
         self.hSliderShutter.setValue(sh) # set value of slider
         time.sleep(0.1)
         self.spectrometer.integration_time_micros(sh*1000) # en micro
-    
+        print(sh)
+        tps=sh/1000+0.2
+        self.scanWidget.val_time.setValue(tps)
     
     
     def mSliderShutter(self): # for shutter slider 
@@ -336,7 +339,7 @@ class FROG(QMainWindow) :
     def acquireOneImage(self):
         '''Start on acquisition
         '''
-        print('acquire on image spectro')
+        # print('acquire on image spectro')
         self.imageReceived=False
         self.runButton.setEnabled(False)
         self.runButton.setStyleSheet("QToolButton:!pressed{border-image: url(%s);background-color: gray ;border-color: gray;}""QToolButton:pressed{image: url(%s);background-color: gray ;border-color: gray}"%(self.iconPlay,self.iconPlay))
@@ -493,12 +496,13 @@ class ThreadRunAcq(QtCore.QThread):
         self.stopRunAcq=False
         
     def run(self):
-        
+        print('moyenne',self.parent.moyenne)
         while self.stopRunAcq is not True :
             data=0
             for m in range (self.parent.moyenne):
                 dataSp=self.spectrometer.intensities()
                 data=data+dataSp
+                print(m)
                     
             data=data /self.parent.moyenne
                 

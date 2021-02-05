@@ -19,7 +19,7 @@ import time
 
 #%% rack initialisation et connexion des racks
 
-portA='com4' # USB n1
+portA='com3' # USB n1
 portB='com5' #USB n2
 
 mysA=Serial()
@@ -75,18 +75,18 @@ except:
     msg.exec_()
     pass
 
-try :
-    connectB()
-except:
-    print ("Error connexion  A2Vrack B")
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Critical)
-    msg.setText("Error connexion A2V")
-    msg.setInformativeText("Error connexion A2V rack B please chek connexion or restart computeur")
-    msg.setWindowTitle("Warning ...")
-    msg.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-    msg.exec_()
-    pass
+# try :
+#     connectB()
+# except:
+#     print ("Error connexion  A2Vrack B")
+#     msg = QMessageBox()
+#     msg.setIcon(QMessageBox.Critical)
+#     msg.setText("Error connexion A2V")
+#     msg.setInformativeText("Error connexion A2V rack B please chek connexion or restart computeur")
+#     msg.setWindowTitle("Warning ...")
+#     msg.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+#     msg.exec_()
+#     pass
 
 def stopConnexion():
     if mysA.is_open==True:

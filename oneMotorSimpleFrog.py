@@ -108,8 +108,10 @@ class ONEMOTOR(QWidget) :
     
         self.thread2=PositionThread(mot=self.MOT,motorType=self.motorType) # thread pour afficher position
         self.thread2.POS.connect(self.Position)
-        self.thread2.POSREAL.connect(self.PositionReal)
+        # 
+        
         self.setup()
+        
         ## initialisation of the jog value 
         if self.indexUnit==0: #  step
             self.unitChange=1
@@ -152,10 +154,10 @@ class ONEMOTOR(QWidget) :
         self.position.setMaximumWidth(80)
         self.position.setStyleSheet("font: bold 15pt" )
         
-        self.positionR=QLabel('1234567')
-        self.positionR.setMaximumHeight(50)
-        self.positionR.setMaximumWidth(80)
-        self.positionR.setStyleSheet("font: bold 10pt;color:blue" )
+        # self.positionR=QLabel('1234567')
+        # self.positionR.setMaximumHeight(50)
+        # self.positionR.setMaximumWidth(80)
+        # self.positionR.setStyleSheet("font: bold 10pt;color:blue" )
         
         self.unitButton=QComboBox()
         self.unitButton.addItem('Step')
@@ -171,7 +173,7 @@ class ONEMOTOR(QWidget) :
         
         #hbox1.addWidget(pos)
         hbox1.addWidget(self.position)
-        hbox1.addWidget(self.positionR)
+        # hbox1.addWidget(self.positionR)
         hbox1.addWidget(self.unitButton)
         hbox1.addWidget(self.zeroButton)
         vbox1.addLayout(hbox1)
@@ -341,10 +343,10 @@ class ONEMOTOR(QWidget) :
         #b=a # valeur en pas moteur pour sauvegarder en pas 
         a=round(a/self.unitChange,3) # valeur tenant compte du changement d'unite
         self.position.setText(str(a)) 
-    def PositionReal(self,POSIREAL):
-        a=POSIREAL
-        a=round(a/self.unitChange,3) # valeur tenant compte du changement d'unite
-        self.positionR.setText(str(a)) 
+    # def PositionReal(self,POSIREAL):
+    #     a=POSIREAL
+    #     a=round(a/self.unitChange,3) # valeur tenant compte du changement d'unite
+    #     self.positionR.setText(str(a)) 
     
     def closeEvent(self, event):
         """ 
@@ -356,7 +358,7 @@ class ONEMOTOR(QWidget) :
         
     def fini(self): # a la fermeture de la fenetre on arrete le thread secondaire
         self.thread2.stopThread()
-        self.MOT.fini()
+        # self.MOT.fini()
         self.isWinOpen=False
         time.sleep(0.1)      
         
@@ -380,11 +382,11 @@ class PositionThread(QtCore.QThread):
             else:
                 
                 Posi=(self.MOT.position())
-                PosReal=self.MOT.positionReal()
+                # PosReal=self.MOT.positionReal()
                 time.sleep(0.3)
                 try :
                     self.POS.emit(Posi)
-                    self.POSREAL.emit(PosReal)
+                    # self.POSREAL.emit(PosReal)
                     time.sleep(0.1)
                 except:
                     print('error emit')
@@ -401,7 +403,7 @@ class PositionThread(QtCore.QThread):
         
 if __name__ =='__main__':
     motor0="Moteur0A"
-    motorType="Apt"
+    motorType="A2V"
     appli=QApplication(sys.argv)
     mot5=ONEMOTOR(mot0=motor0,motorTypeName0=motorType,nomWin='motorSimple',unit=1,jogValue=100)
     mot5.show()

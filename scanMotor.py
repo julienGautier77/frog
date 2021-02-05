@@ -129,11 +129,12 @@ class SCAN(QWidget):
         self.val_nbTir.setMaximum(100)
         self.val_nbTir.setValue(1)
         self.val_nbTir.setMaximumWidth(sizeWidth)
+        self.val_nbTir.setEnabled(False)
         
         self.lab_time=QLabel('Timeout')
         self.val_time=QDoubleSpinBox()
         self.val_time.setSuffix(" %s" % 's')
-        self.val_time.setMaximum(10)
+        self.val_time.setMaximum(20)
         self.val_time.setValue(0.2)
         self.val_time.setMaximumWidth(sizeWidth)
         
