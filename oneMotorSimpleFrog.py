@@ -352,14 +352,14 @@ class ONEMOTOR(QWidget) :
         """ 
         When closing the window
         """
-        self.fini()
+        self.isWinOpen=False
         time.sleep(0.1)
         event.accept() 
-        
+        self.fini()
     def fini(self): # a la fermeture de la fenetre on arrete le thread secondaire
         self.thread2.stopThread()
-        # self.MOT.fini()
-        self.isWinOpen=False
+        self.MOT.fini()
+        
         time.sleep(0.1)      
         
 

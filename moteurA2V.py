@@ -89,6 +89,7 @@ except:
 #     pass
 
 def stopConnexion():
+    
     if mysA.is_open==True:
         try :
             mysA.close()
@@ -288,7 +289,9 @@ class MOTORA2V():
         Type= 1 # Set Actual Postion Bizarre ....
         value = [0]
         out = sendCommand(cmd,Type,self.numMoteur,value,self.rack)
-
+    
+    def fini(self):
+        stopConnexion()
 
 if __name__ == "__main__":
     print("test")

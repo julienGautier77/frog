@@ -75,7 +75,7 @@ class FROG(QMainWindow) :
         self.spectrometer=Spectrometer(listdevice[0])
         print("spectrometer connected @",self.spectrometer,print(self.spectrometer.stray_light_coeffs()))
         self.wavelengths=self.spectrometer.wavelengths() # array Wavelengths of the spectrometer 
-        
+        print("Wavelength: " ,self.wavelengths.min(),self.wavelengths.max())
         
         self.MatData=[]
         self.MatFs=[]
@@ -285,7 +285,7 @@ class FROG(QMainWindow) :
     
     def MoyenneAct(self):
         self.moyenne=(self.moyBox.value())
-        print(self.moyenne)
+        # print(self.moyenne)
     def ResetData(self):
         ##◙ reset data when scan start
         self.MatData=[]
@@ -301,7 +301,7 @@ class FROG(QMainWindow) :
         self.hSliderShutter.setValue(sh) # set value of slider
         time.sleep(0.1)
         self.spectrometer.integration_time_micros(sh*1000) # en micro
-        print(sh)
+        # print(sh)
         tps=sh/1000+0.2
         self.scanWidget.val_time.setValue(tps)
     
@@ -496,13 +496,13 @@ class ThreadRunAcq(QtCore.QThread):
         self.stopRunAcq=False
         
     def run(self):
-        print('moyenne',self.parent.moyenne)
+        # print('moyenne',self.parent.moyenne)
         while self.stopRunAcq is not True :
             data=0
             for m in range (self.parent.moyenne):
                 dataSp=self.spectrometer.intensities()
                 data=data+dataSp
-                print(m)
+                # print(m)
                     
             data=data /self.parent.moyenne
                 
