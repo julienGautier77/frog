@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed Feb 28 11:43:51 2018
@@ -19,7 +20,7 @@ import time
 
 #%% rack initialisation et connexion des racks
 
-portA='com3' # USB n1
+portA='com4' # USB n1
 portB='com5' #USB n2
 
 mysA=Serial()
@@ -31,7 +32,7 @@ def connectA():
     ouverture du port A
     """
     mysA.port=portA
-    mysA.timeout=1
+    mysA.timeout=5
     mysA.Baudrate=9600
     if mysA.is_open==False:
         mysA.open()
@@ -112,7 +113,7 @@ def sendCommand(instruction, instr_type, mii, values_list,rack="A"):
             'STAP':7, 'RSAP':8, 'SGP':9, 'GGP':10, 'RFS':13, 'SIO':14, 'GIO':15, 'WAIT':27, 'STOP':28,
                 'SCO':30, 'GCO':31, 'CCO':32, 'VER':136, 'RST':255}
     """
-    
+    mutex=QtCore.QMutex()
     if len(values_list) > 4:
         print ("Command error: "+str(values_list).encode('hex'))
         
@@ -125,11 +126,18 @@ def sendCommand(instruction, instr_type, mii, values_list,rack="A"):
 
         cmd[8] = sum(cmd[0:8])&0xff
     if rack=="A" :
+        mutex.lock()
+        
         mysA.write(cmd)
-        time.sleep(0.02)
+        time.sleep(0.1)
         out = mysA.read(9)
-        time.sleep(0.02)
+        time.sleep(0.1)
+        
+        mutex.unlock()
+        
+       
         return bytearray(out)
+        
     elif rack=='B':
         mysB.write(cmd)
         time.sleep(0.02)
@@ -223,7 +231,7 @@ def iniTot():
         ini(vi)
     print('initialisation A2V :OK')
     
-iniTot() # initialisation de tous les moteurs        
+#iniTot() # initialisation de tous les moteurs        
         
 #%% class A2V motor
 class MOTORA2V():
@@ -243,12 +251,15 @@ class MOTORA2V():
         value=[0]
         
         out2 = sendCommand(cmd,Type,self.numMoteur,value,self.rack)
-        #out2 = receiveData()
+        # if out2==b'':
+        #     print('err')
+        # else:
         try:
             pos= int(out2[4]<<24) + int(out2[5]<<16) + int(out2[6]<<8) + int(out2[7])
         except:
             pos=0
         if  pos> 0x80000000: pos = pos - 0xffffffff
+        
         return int(pos)  
     
     def move(self,pos=0,vitesse=10000):
@@ -285,10 +296,16 @@ class MOTORA2V():
 
     def setzero(self):
         print ("motor",self.moteurname,"set to Zero")
-        cmd= 5 #set Axis Parameter
-        Type= 1 # Set Actual Postion Bizarre ....
-        value = [0]
-        out = sendCommand(cmd,Type,self.numMoteur,value,self.rack)
+        # cmd= 5 #set Axis Parameter
+        # Type= 1 # Set Actual Postion Bizarre ....
+        # value = [0]
+        # out = sendCommand(cmd,Type,self.numMoteur,value,self.rack)
+        # out=sendCommand(5,0,self.numMoteur,[0],self.rack)
+        
+
+        self.stopMotor() 
+        out = sendCommand(1,0,self.numMoteur,[0],self.rack) # go to velocity right with speed 0
+        out = sendCommand(5,1,self.numMoteur,[0],self.rack) #♣ actual position to 0
     
     def fini(self):
         stopConnexion()

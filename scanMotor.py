@@ -38,11 +38,11 @@ class SCAN(QWidget):
         self.configMotName=configMotName
        
         self.conf=QtCore.QSettings(self.configMotName, QtCore.QSettings.IniFormat)
-        
+        self.stepmotor=float(self.conf.value(self.motor+"/stepmotor"))
         self.indexUnit=3 #fs
         self.name=str(self.conf.value(self.motor+"/Name"))
         self.threadScan=ThreadScan(self)
-        self.stepmotor=float(self.conf.value(self.motor+"/stepmotor"))
+        
         self.setup()
         self.actionButton()
         self.unit()
@@ -187,7 +187,7 @@ class SCAN(QWidget):
         
         
     def Acq(self,pos,nbShoot):
-        print('position acquise',pos/self.unitChange,self.unitChange,self.unitName)
+        # print('position acquise',pos/self.unitChange,self.unitChange,self.unitName)
         self.acqMain.emit(pos/self.unitChange,nbShoot) # emit signal to acquire and emit the shot number 
         
         
@@ -218,7 +218,7 @@ class SCAN(QWidget):
     def Remain(self,nbstepdone,shotmax)   :
         
         print('remain',nbstepdone,self.nbStep)
-        self.progressBar.setMaximum(shotmax)
+        self.progressBar.setMaximum(int(shotmax))
         self.val_nbStepRemain.setText(str(nbstepdone) )  #Ì(str((self.nbStep*self.val_nbShoot)-nbstepdone))
         self.progressBar.setValue(int(shotmax-nbstepdone))
         # if self.nbStep*self.val_nbShoot==nbstepdone:
@@ -270,6 +270,7 @@ class SCAN(QWidget):
         unit change mot foc
         '''
         ii=self.unitBouton.currentIndex()
+        print(ii,'index')
         if ii==0: #  step
             self.unitChange=1
             self.unitName='step'
@@ -278,6 +279,7 @@ class SCAN(QWidget):
             self.unitChange=float((1*self.stepmotor)) 
             self.unitName='um'
         if ii==2: #  mm 
+            print('ici step montor ', self.stepmotor)
             self.unitChange=float((1000*self.stepmotor))
             self.unitName='mm'
         if ii==3: #  fs  double passage : 1 microns=6fs
@@ -286,14 +288,14 @@ class SCAN(QWidget):
         if ii==4: #  en degres
             self.unitChange=1 *self.stepmotor
             self.unitName='°'    
-            
+        print(self.unitChange)
         if self.unitChange==0:
             self.unitChange=1 #avoid 0 
         
         self.val_step.setSuffix(" %s" % self.unitName)
         self.val_ini.setSuffix(" %s" % self.unitName)
         self.val_fin.setSuffix(" %s" % self.unitName)
- 
+        print('unitChange main',self.unitChange)
     def closeEvent(self, event):
         """ when closing the window
         """
@@ -327,6 +329,10 @@ class ThreadScan(QtCore.QThread):
         self.vfin=self.parent.vFin*self.parent.unitChange
         self.step=self.parent.vStep*self.parent.unitChange
         
+        
+        
+        print('unitChange scan',self.parent.unitChange)
+        
         # print('step en mm',self.step)
         self.val_time=self.parent.val_time.value()
         # print('timeouts',self.val_time)
@@ -343,13 +349,13 @@ class ThreadScan(QtCore.QThread):
         time.sleep(0.5)
         # print(self.vini,self.vfin,self.step)
         movement=np.arange(float(self.vini),float(self.vfin)+float(self.step),float(self.step))
-        print (movement,"start scan",self.parent.unitChange)
+        # print (movement,"start scan",self.parent.unitChange)
         nb=0 # numero du tir
         mv=0
         nbTotShot=np.size(movement)*self.parent.val_nbTir.value()
         print('nombre total d acquisition',nbTotShot)
         for mv in movement:
-            print (mv)
+            # print (mv)
             if self.stop==True:
                 break
             else:
@@ -357,27 +363,29 @@ class ThreadScan(QtCore.QThread):
                 self.parent.MOT.move(mv)
                 b=self.parent.MOT.position()
                 
-                # while True:
-                #     if self.stop==True:
-                #         break
-                #     else :
-                #         b=self.parent.MOT.position()
-                #         time.sleep(0.1)
-                #         # print ('position',b,mv)
-                #         if mv-0.001<b and b<=mv+0.001:
-                #             print( "position reached")
-                #             break 
+                while True:
+                    if self.stop==True:
+                        break
+                    else :
+                        b=self.parent.MOT.position()
+                        time.sleep(0.1)
+                        # print ('position',b,mv)
+                        if mv-0.001<b and b<=mv+0.001:
+                            # print( "position reached")
+                            break 
                 
                 for nu in range (0,int(self.parent.val_nbTir.value())):
-                    
+                    if self.stop==True:
+                        break
                     print('acq spectro !!!')
                     self.acqScan.emit(self.parent.MOT.position(),nb)
                     nb=nb+1
                     self.nbRemain.emit(nbTotShot-nb,nbTotShot)
-                    print('wait',self.val_time,self.stop)
+                    # print('wait',self.val_time,self.stop)
                     time.sleep(self.val_time)
 
         print ("fin du scan")
+        self.parent.MOT.move(0) # go to zero @the end of the scan 
         self.parent.stopScan()
         
     def stopThread(self):
@@ -387,12 +395,12 @@ class ThreadScan(QtCore.QThread):
        
 if __name__=='__main__':
     appli=QApplication(sys.argv)
-    import moteurApt as apt
-    motorType=apt
+    import moteurA2V as A2V
+    motorType='A2V'
     motor="Moteur0A"
-    MOT=apt.MOTORAPT(motor)
+    MOT=A2V.MOTORA2V(motor)
     
-    s=SCAN(MOT=MOT,motor=motor,configMotName='./fichiersConfig/configMoteurApt.ini') # for the scan)
+    s=SCAN(MOT=MOT,motor=motor,configMotName='./fichiersConfig/configMoteurA2V.ini') # for the scan)
         
     s.show()
     appli.exec_()

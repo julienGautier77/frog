@@ -152,7 +152,7 @@ class ONEMOTOR(QWidget) :
         self.position=QLabel('1234567')
         self.position.setMaximumHeight(50)
         self.position.setMaximumWidth(80)
-        self.position.setStyleSheet("font: bold 15pt" )
+        self.position.setStyleSheet("font: bold 12pt;color:red" )
         
         # self.positionR=QLabel('1234567')
         # self.positionR.setMaximumHeight(50)
@@ -383,9 +383,10 @@ class PositionThread(QtCore.QThread):
                 
                 Posi=(self.MOT.position())
                 # PosReal=self.MOT.positionReal()
-                time.sleep(0.3)
+                time.sleep(0.5)
                 try :
                     self.POS.emit(Posi)
+                    
                     # self.POSREAL.emit(PosReal)
                     time.sleep(0.1)
                 except:
