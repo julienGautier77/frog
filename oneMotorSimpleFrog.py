@@ -95,16 +95,16 @@ class ONEMOTOR(QWidget) :
             self.MOT=self.motorType.MOTORTEST(self.motor)
             
         configMotName=self.configPath+ self.configMotName  
-        print(configMotName)
+        # print(configMotName)
         self.conf=QtCore.QSettings(configMotName, QtCore.QSettings.IniFormat) # fichier config motor fichier .ini
         
         self.name=str(self.conf.value(self.motor+"/Name"))
         self.setWindowTitle(nomWin+' : '+ self.name+'                     V.'+str(self.version))
-        print(self.name)
+        # print(self.name)
         self.stepmotor=float(self.conf.value(self.motor+"/stepmotor"))
         self.butePos=float(self.conf.value(self.motor+"/buteePos"))
         self.buteNeg=float(self.conf.value(self.motor+"/buteeneg"))
-        print('stepMotor',self.stepmotor)
+        # print('stepMotor',self.stepmotor)
     
         self.thread2=PositionThread(mot=self.MOT,motorType=self.motorType) # thread pour afficher position
         self.thread2.POS.connect(self.Position)
@@ -383,7 +383,7 @@ class PositionThread(QtCore.QThread):
                 
                 Posi=(self.MOT.position())
                 # PosReal=self.MOT.positionReal()
-                time.sleep(0.5)
+                time.sleep(0.1)
                 try :
                     self.POS.emit(Posi)
                     

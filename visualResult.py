@@ -40,6 +40,7 @@ from visu.WinOption import OPTION
 from visu.andor import SifFile
 from visu.winFFT import WINFFT
 from visu.winMath import WINMATH
+from visu.WinPreference import PREFERENCES
 try :
     from visu.Win3D import GRAPH3D #conda install pyopengl
 except :
@@ -148,7 +149,7 @@ class SEERESULT(QMainWindow) :
                 self.winM=MEAS(conf=self.conf,name=self.name)
             
         self.winOpt=OPTION(conf=self.conf,name=self.name)
-        
+        self.winPref=PREFERENCES(conf=self.conf,name=self.name)
         if self.encercled=="on":
             self.winEncercled=WINENCERCLED(conf=self.conf,name=self.name)
         
@@ -319,8 +320,8 @@ class SEERESULT(QMainWindow) :
         
         self.label_Cross=QLabel()
         #self.label_Cross.setMaximumHeight(20)
-        self.label_Cross.setMaximumWidth(170)
-        self.label_Cross.setStyleSheet("font:12pt")
+        self.label_Cross.setMaximumWidth(300)
+        self.label_Cross.setStyleSheet("font:10pt")
         self.statusBar.addPermanentWidget(self.label_Cross)
         self.statusBar.addPermanentWidget(self.label_CrossValue)
         
@@ -459,7 +460,7 @@ class SEERESULT(QMainWindow) :
         self.winImage.setContentsMargins(0,0,0,0)
        # self.winImage.setAspectLocked(True)
         self.winImage.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.winImage.ci.setContentsMargins(0,0,0,0)
+        self.winImage.ci.setContentsMargins(10,0,15,15)
         self.vbox2.addWidget(self.winImage)
         self.vbox2.setContentsMargins(0,0,0,0)
         
@@ -538,10 +539,10 @@ class SEERESULT(QMainWindow) :
         self.p1.setXRange(0,self.dimx)
         self.winPLOTY = self.winImage.addPlot(col=1,row=0)#, colspan=1)
         self.winPLOTY.setMaximumWidth(120)
-        self.winPLOTY.showAxis('right',show=False)
-        self.winPLOTY.showAxis('left',show=True)
+        self.winPLOTY.showAxis('right',show=True)
+        self.winPLOTY.showAxis('left',show=False)
         self.winPLOTY.getViewBox().invertY(False)
-        self.winPLOTY.setLabel('left','Wavlenght (nm) ')
+        self.winPLOTY.setLabel('right','Wavlenght (nm) ')
         #self.winPLOTY.setContentsMargins(0,15,0,0)
         
         self.winPLOTX = self.winImage.addPlot(col=0,row=1)
@@ -593,7 +594,7 @@ class SEERESULT(QMainWindow) :
         self.plotCercle=pg.CircleROI([self.xc,self.yc],[10,10],pen='g')
         self.plotRectZoom=pg.RectROI([self.xc,self.yc],[1*self.rx,self.ry],pen='w')
         
-        self.ROICross=pg.RectROI([0,0],[10,10],pen='r')
+        self.ROICross=pg.RectROI([0,2],[10,10],pen='r')
         #self.plotRect.addScaleRotateHandle([0.5, 1], [0.5, 0.5])
         #self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5()) # dark style
         
@@ -619,7 +620,7 @@ class SEERESULT(QMainWindow) :
         if self.plot3D=="on":
             self.box3d.clicked.connect(self.Graph3D)
             
-        self.winOpt.closeEventVar.connect(self.ScaleImg)
+        self.winPref.closeEventVar.connect(self.ScaleImg)
         
         
         self.sliderImage.valueChanged.connect(self.SliderImgFct)
@@ -703,7 +704,7 @@ class SEERESULT(QMainWindow) :
         # take ROI 
         self.cut=self.plotLine.getArrayRegion(self.data,self.imh)
         
-        if self.winOpt.checkBoxAxeScale.isChecked()==1:
+        if self.winPref.checkBoxAxeScale.isChecked()==1:
             self.linePoints=self.plotLine.listPoints()
             self.lineXo=self.linePoints[0][0]
             self.lineYo=self.linePoints[0][1]
@@ -712,7 +713,7 @@ class SEERESULT(QMainWindow) :
             #self.plotLineAngle=np.arctan((self.lineYf-self.lineYo)/(self.lineXf-self.lineXo))
             # print('angle',self.plotLineAngle*360/(2*3.14),self.cut.size)
             
-            step=(self.winOpt.stepX**2*(self.lineXo-self.lineXf)**2+self.winOpt.stepY**2*(self.lineYo-self.lineYf)**2)
+            step=(self.winPref.stepX**2*(self.lineXo-self.lineXf)**2+self.winPref.stepY**2*(self.lineYo-self.lineYf)**2)
             step=step**0.5/self.cut.size
             self.absiLine=np.arange(0,(self.cut.size)*step,step)
             
@@ -763,7 +764,7 @@ class SEERESULT(QMainWindow) :
         # plot on a separated widget the ROI plot profile
         if self.ite=='line':
             self.open_widget(self.winCoupe)
-            if self.winOpt.checkBoxAxeScale.isChecked()==1:
+            if self.winPref.checkBoxAxeScale.isChecked()==1:
                 self.winCoupe.PLOT(self.cut,axis=self.absiLine)
             else:
                 self.winCoupe.PLOT(self.cut)
@@ -877,13 +878,13 @@ class SEERESULT(QMainWindow) :
         ### color  and sacle 
         if self.checkBoxScale.isChecked()==1: # color autoscale on
             
-            if self.winOpt.checkBoxAxeScale.isChecked()==1:
-                self.axeX.setScale(self.winOpt.stepX)
-                self.axeY.setScale(self.winOpt.stepY)
+            if self.winPref.checkBoxAxeScale.isChecked()==1:
+                self.axeX.setScale(self.winPref.stepX)
+                self.axeY.setScale(self.winPref.stepY)
                 self.axeX.setLabel('um')
                 self.axeY.setLabel('um')
                 self.axeX.showLabel(True)
-            if self.winOpt.checkBoxAxeScale.isChecked()==0:
+            if self.winPref.checkBoxAxeScale.isChecked()==0:
                 self.scaleAxis="off"
                 self.axeX.setScale(1)
                 self.axeY.setScale(1)  
@@ -1023,12 +1024,22 @@ class SEERESULT(QMainWindow) :
             self.dataRect=self.dataRect.mean(axis=1)
             
             if self.axisXPixel==True:
+                
                 self.xRect=np.arange(self.ROICross.pos()[0],self.ROICross.pos()[0]+self.ROICross.size()[0],1)#
             else:
                 # print('position croix',self.ROICross.pos(),self.ROICross.size())
                 
+                
                 self.xRect=self.axisX[int(round(self.ROICross.pos()[0])):int(round(self.ROICross.pos()[0])+self.ROICross.size()[0])+1]
                 # print('lens',np.shape(self.xRect),np.shape(self.dataRect))
+                
+                if np.shape(self.xRect)>np.shape(self.dataRect):
+                    self.xRect=self.xRect[0,np.shape(self.dataRect)]
+                    print('sup')
+                if np.shape(self.xRect)<np.shape(self.dataRect):
+                    self.dataRect=self.dataRect[0,np.shape(self.xRect)]
+                    print('inf')
+            
             self.curve3.setData(self.xRect,self.dataRect,clear=True)
             
             self.setFit(data=self.dataRect,xMat=self.xRect)
@@ -1053,11 +1064,20 @@ class SEERESULT(QMainWindow) :
                 self.vLine.setPos(self.xc)
                 self.hLine.setPos(self.yc)
             
-                
-            dataCross=self.data[int(self.xc),int(self.yc)] 
-            coupeX=self.data[int(self.xc),:]
+            try:    
+                dataCross=self.data[int(self.xc),int(self.yc)] 
+            except:
+                dataCross=0
+            
+            try:
+                coupeX=self.data[int(self.xc),:]
+            except :
+                coupeX=np.arange(0,int(self.xc+1),1) # to avoid error if cross out of picture
             self.coupeX=coupeX
-            coupeY=self.data[:,int(self.yc)]
+            try: 
+                coupeY=self.data[:,int(self.yc)]
+            except:
+                coupeY=np.arange(0,int(self.yc+1),1)
             self.coupeY=coupeY
             xxx=np.arange(0,int(self.dimx),1)#
             if self.axisX is None:
@@ -1075,11 +1095,13 @@ class SEERESULT(QMainWindow) :
             if coupeYMax==0:
                 coupeYMax=1
                 
-            if self.winOpt.checkBoxAxeScale.isChecked()==1: # scale axe on 
-                self.label_Cross.setText('x='+ str(round(int(self.xc)*self.winOpt.stepX,2)) + '  um'+' y=' + str(round(int(self.yc)*self.winOpt.stepY,2)) +' um')
+            if self.winPref.checkBoxAxeScale.isChecked()==1: # scale axe on 
+                self.label_Cross.setText('x='+ str(round(int(self.xc)*self.winPref.stepX,2)) + '  um'+' y=' + str(round(int(self.yc)*self.winPref.stepY,2)) +' um')
             else : 
-                self.label_Cross.setText('x='+ str(self.axisX[int(self.xc)]) + ' fs  '+ ' y=' + str(self.axisY[int(self.yc)]) +' nm' )
-                
+                try:
+                    self.label_Cross.setText('x='+ str(round(self.axisX[int(self.xc)],2)) + ' fs  '+ ' y=' + str(self.axisY[int(self.yc)]) +' nm' )
+                except:
+                    self.label_Cross.setText('x=')
             dataCross=round(dataCross,3) # take data  value  on the cross
             self.label_CrossValue.setText(' v.=' + str(dataCross))
             
@@ -1439,7 +1461,7 @@ class SEERESULT(QMainWindow) :
     
     def ScaleImg(self):
         #scale Axis px to um
-        if self.winOpt.checkBoxAxeScale.isChecked()==1:
+        if self.winPref.checkBoxAxeScale.isChecked()==1:
             self.scaleAxis="on"
             self.LigneChanged()
         else :
@@ -1530,7 +1552,8 @@ class SEERESULT(QMainWindow) :
     
     
     def gauss(self,x, A, mu, sigma ,B):
-    
+        if sigma==0:
+            sigma=0.1
         try :
             gau=A*np.exp(-(x-mu)**2/(2*sigma**2))+B
         except : gau=0
@@ -1570,13 +1593,13 @@ class SEERESULT(QMainWindow) :
     def autoScale(self):
         
         if self.checkBoxScale.isChecked()==1: # color autoscale on
-            if self.winOpt.checkBoxAxeScale.isChecked()==1:
+            if self.winPref.checkBoxAxeScale.isChecked()==1:
                 self.axeX.setScale(self.winOpt.stepX)
                 self.axeY.setScale(self.winOpt.stepY)
                 self.axeX.setLabel('um')
                 self.axeY.setLabel('um')
                 self.axeX.showLabel(True)
-            if self.winOpt.checkBoxAxeScale.isChecked()==0:
+            if self.winPref.checkBoxAxeScale.isChecked()==0:
                 self.scaleAxis="off"
                 self.axeX.setScale(1)
                 self.axeY.setScale(1)  
