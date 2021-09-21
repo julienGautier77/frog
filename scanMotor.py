@@ -7,13 +7,13 @@ Created on Mon Apr 22 20:23:31 2019
 """
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QApplication,QSizePolicy
-from PyQt5.QtWidgets import QWidget,QMessageBox,QLineEdit,QFrame
-from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout,QPushButton,QGridLayout,QDoubleSpinBox,QProgressBar
-from PyQt5.QtWidgets import QComboBox,QCheckBox,QLabel
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QWidget,QToolButton
+from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout,QGridLayout,QDoubleSpinBox,QProgressBar
+from PyQt5.QtWidgets import QComboBox,QLabel
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
-import sys,time,os
+import sys,time
 import qdarkstyle
 import numpy as np
 
@@ -46,7 +46,7 @@ class SCAN(QWidget):
         self.setup()
         self.actionButton()
         self.unit()
-       
+        self.isrunnig=False
         self.threadScan.nbRemain.connect(self.Remain)
         self.setWindowIcon(QIcon('./icons/LOA.png'))
         self.setWindowTitle('Scan'+' : '+ self.name)
@@ -82,48 +82,68 @@ class SCAN(QWidget):
         self.unitBouton.setCurrentIndex(self.indexUnit)
         
         #hboxTitre.addWidget(self.unitBouton)
+        sizeWidth=80
+        sizeHeight=40
+        font="font:14pt"
+        
         
         lab_nbStepRemain=QLabel('Remaining step :')
+        lab_nbStepRemain.setStyleSheet(font)
         self.val_nbStepRemain=QLabel(self)
         
         hboxRemain.addWidget(lab_nbStepRemain)
         hboxRemain.addWidget(self.val_nbStepRemain)
         self.progressBar=QProgressBar()
+        self.progressBar.setMinimumHeight(sizeHeight)
         hboxRemain.addWidget(self.progressBar)
         
-        sizeWidth=70
+        
+        
         self.lab_nbr_step = QLabel('nb of step :')
+        self.lab_nbr_step.setStyleSheet(font)
         self.val_nbr_step = QDoubleSpinBox(self)
         self.val_nbr_step.setDecimals(0)
         self.val_nbr_step.setMaximum(10000)
         self.val_nbr_step.setMinimum(1)
         self.val_nbr_step.setValue(20)
         self.val_nbr_step.setMaximumWidth(sizeWidth)
-        
+        self.val_nbr_step.setMaximumHeight(sizeHeight)
+        self.val_nbr_step.setMinimumHeight(sizeHeight)
+        self.val_nbr_step.setStyleSheet(font)
         self.lab_step = QLabel("step value")
+        self.lab_step.setStyleSheet(font)
         self.val_step = QDoubleSpinBox()
         self.val_step.setDecimals(0)
         self.val_step.setMaximum(10000)
         self.val_step.setMinimum(-10000)
         self.val_step.setValue(50)
         self.val_step.setMaximumWidth(sizeWidth)
-        
-        self.lab_ini = QLabel('ini value')
+        self.val_step.setMaximumHeight(sizeHeight)
+        self.val_step.setMinimumHeight(sizeHeight)
+        self.val_step.setStyleSheet(font)
+        self.lab_ini = QLabel('Iniy value')
+        self.lab_ini.setStyleSheet(font)
         self.val_ini =QDoubleSpinBox()
         self.val_ini.setDecimals(0)
         self.val_ini.setMaximum(100000)
         self.val_ini.setMinimum(-100000)
         self.val_ini.setMaximumWidth(sizeWidth)
-        
+        self.val_ini.setMaximumHeight(sizeHeight)
+        self.val_ini.setMinimumHeight(sizeHeight)
+        self.val_ini.setStyleSheet(font)
         self.lab_fin = QLabel('Final value')
+        self.lab_fin.setStyleSheet(font)
         self.val_fin =QDoubleSpinBox()
         self.val_fin.setDecimals(0)
         self.val_fin.setMaximum(100000)
         self.val_fin.setMinimum(-10000)
         self.val_fin.setValue(1000)
         self.val_fin.setMaximumWidth(sizeWidth)
-        
+        self.val_fin.setMaximumHeight(sizeHeight)
+        self.val_fin.setMinimumHeight(sizeHeight)
+        self.val_fin.setStyleSheet(font)
         self.lab_nbTir=QLabel('Nb Average')
+        self.lab_nbTir.setStyleSheet(font)
         self.val_nbTir=QDoubleSpinBox()
         self.val_nbTir.setDecimals(0)
         self.val_nbTir.setMaximum(100)
@@ -131,23 +151,34 @@ class SCAN(QWidget):
         self.val_nbTir.setMaximumWidth(sizeWidth)
         self.val_nbTir.setEnabled(False)
         
-        self.lab_time=QLabel('Timeout')
+        self.lab_time=QLabel('TimeOut')
+        self.lab_time.setStyleSheet(font)
         self.val_time=QDoubleSpinBox()
         self.val_time.setSuffix(" %s" % 's')
         self.val_time.setMaximum(20)
         self.val_time.setValue(0.2)
         self.val_time.setMaximumWidth(sizeWidth)
+        self.val_time.setMaximumHeight(sizeHeight)
+        self.val_time.setMinimumHeight(sizeHeight)
+        self.val_time.setStyleSheet(font)
+        self.but_start = QToolButton()
+        self.but_start.setText(' START ')
+        self.but_start.setStyleSheet("border-radius:20px;background-color: green;font:24pt")
+        self.but_start.setMaximumHeight((sizeHeight))
+        self.but_start.setMinimumHeight((sizeHeight))
+        self.but_start.setMinimumWidth((sizeWidth))
         
-        self.but_start = QPushButton('Start')
-        self.but_start.setStyleSheet("border-radius:20px;background-color: green")
-        self.but_stop  = QPushButton('STOP')
-        self.but_stop.setStyleSheet("border-radius:20px;background-color: red")
+        self.but_stop  = QToolButton()
+        self.but_stop.setText(' STOP ')
+        self.but_stop.setStyleSheet("border-radius:20px;background-color: red;font:24pt")
+        self.but_stop.setMinimumHeight((sizeHeight))
+        self.but_stop.setMinimumWidth((sizeWidth))
         self.but_stop.setEnabled(False)
         
         
         
         grid_layout = QGridLayout()
-        grid_layout.setHorizontalSpacing(10)
+        grid_layout.setHorizontalSpacing(1)
         grid_layout.addWidget(self.lab_nbr_step  , 0, 0)
         grid_layout.addWidget(self.val_nbr_step  , 0, 1)
         grid_layout.addWidget(self.lab_step  , 0, 2)
@@ -158,10 +189,10 @@ class SCAN(QWidget):
         grid_layout.addWidget(self.lab_fin,1,2)
         grid_layout.addWidget(self.val_fin,1,3)
         #grid_layout.addWidget(self.but_stop,1,4)
-        grid_layout.addWidget(self.lab_nbTir,2,0)
-        grid_layout.addWidget(self.val_nbTir,2,1)
-        grid_layout.addWidget(self.lab_time,2,2)
-        grid_layout.addWidget(self.val_time,2,3)
+        # grid_layout.addWidget(self.lab_nbTir,2,0)
+        # grid_layout.addWidget(self.val_nbTir,2,1)
+        grid_layout.addWidget(self.lab_time,2,0)
+        grid_layout.addWidget(self.val_time,2,1)
        
         hboxTitre.addWidget(self.but_start)
         hboxTitre.addWidget(self.but_stop)
@@ -184,15 +215,20 @@ class SCAN(QWidget):
         
         self.but_start.clicked.connect(self.startScan)
         self.but_stop.clicked.connect(self.stopScan)
+        
+        
         self.threadScan.nbRemain.connect(self.Remain)
         self.threadScan.acqScan.connect(self.Acq)
         
         
         
     def Acq(self,pos,nbShoot):
+        
         # print('position acquise',pos/self.unitChange,self.unitChange,self.unitName)
         self.acqMain.emit(pos/self.unitChange,nbShoot) # emit signal to acquire and emit the shot number 
-        
+    
+    def AcqRunning(self,acqRunning=False):
+        self.isrunnig=acqRunning
         
     def stopScan(self):
         
@@ -207,7 +243,7 @@ class SCAN(QWidget):
         self.lab_fin.setEnabled(True)
         self.val_fin.setEnabled(True)
         self.lab_nbTir.setEnabled(True)
-        self.val_nbTir.setEnabled(True)
+        self.val_nbTir.setEnabled(False)
         self.lab_time.setEnabled(True)
         self.val_time.setEnabled(True)
         self.but_start.setEnabled(True)
@@ -220,7 +256,7 @@ class SCAN(QWidget):
         
     def Remain(self,nbstepdone,shotmax)   :
         
-        print('remain',nbstepdone,self.nbStep)
+        # print('remain',nbstepdone,self.nbStep)
         self.progressBar.setMaximum(int(shotmax))
         self.val_nbStepRemain.setText(str(nbstepdone) )  #Ì(str((self.nbStep*self.val_nbShoot)-nbstepdone))
         self.progressBar.setValue(int(shotmax-nbstepdone))
@@ -242,7 +278,7 @@ class SCAN(QWidget):
         self.nbStep=int(abs(self.nbStep))
         self.val_nbr_step.setValue(self.nbStep)
         
-        self.val_nbShoot=self.val_nbTir.value()
+        self.val_nbShoot=1#self.val_nbTir.value()#
         
     def changeFinal(self):
        self.nbStep=self.val_nbr_step.value()
@@ -250,7 +286,7 @@ class SCAN(QWidget):
        self.vStep=self.val_step.value()
        self.vFin=self.vInit+(self.nbStep)*self.vStep
        self.val_fin.setValue(self.vFin)
-       self.val_nbShoot=self.val_nbTir.value()
+       self.val_nbShoot=1#self.val_nbTir.value()
     
     def startScan(self):
         self.stepChange()
@@ -326,7 +362,7 @@ class ThreadScan(QtCore.QThread):
         self.stop=False
 
     def run(self):
-        print('start scan' )
+        print('Start Scan : ' )
         self.stop=False
         
         # print('number of steps:', self.parent.nbStep,self.parent.unitName)
@@ -357,7 +393,7 @@ class ThreadScan(QtCore.QThread):
             else:	
                 time.sleep(0.2)
                 b=self.parent.MOT.position()
-                print(b,self.vini)
+                # print(b,self.vini)
         time.sleep(0.5)
         #print(self.vini,self.vfin,self.step)
         movement=np.arange(float(self.vini),float(self.vfin)+float(self.step),float(self.step))
@@ -365,7 +401,7 @@ class ThreadScan(QtCore.QThread):
         nb=0 # numero du tir
         mv=0
         nbTotShot=np.size(movement)*self.parent.val_nbTir.value()
-        print('nombre total d acquisition',nbTotShot)
+       
         for mv in movement:
             # print (mv)
             if self.stop==True:
@@ -381,32 +417,43 @@ class ThreadScan(QtCore.QThread):
                     else :
                         b=self.parent.MOT.position()
                         time.sleep(0.1)
-                        print ('position',b,mv)
+                        print (' Moving..., Actual position :',b,'Position to reach', mv)
                         if mv-1<b and b<=mv+1:
-                            # print( "position reached")
+                            print( "position reached")
                             break 
                 
-                for nu in range (0,int(self.parent.val_nbTir.value())):
+                self.acqScan.emit(self.parent.MOT.position(),nb)
+                while self.parent.isrunnig==True: # if cam is ruunig we wait
+                    print('Acquisition spectro en cours...')#,self.parent.isrunnig)
                     if self.stop==True:
                         break
-                    print('acq spectro !!!')
-                    self.acqScan.emit(self.parent.MOT.position(),nb)
-                    nb=nb+1
-                    self.nbRemain.emit(nbTotShot-nb,nbTotShot)
-                    print('wait',self.val_time,self.stop)
-                    time.sleep(self.val_time)
+                    else :
 
-        print ("fin du scan")
+                        time.sleep(0.1)
+                        
+                print('wait ... ',self.val_time)#,self.stop)
+                print('Acquisition done  ')#,self.parent.isrunnig)
+                print('   ')
+                nb=nb+1
+                self.nbRemain.emit(nbTotShot-nb,nbTotShot)
+                
+                
+                time.sleep(self.val_time)
+        
+        
+        print ("End Scan")
+        print('Go back to 0')
         self.parent.MOT.move(0)
         b=self.parent.MOT.position()
-        # print(b)
+        
+        # go to zero @the end of the scan 
         while b!=0:
             if self.stop==True:
                 break
             else:	
                 time.sleep(1)
                 b=self.parent.MOT.position()
-         # go to zero @the end of the scan 
+         
         self.parent.stopScan()
         
     def stopThread(self):
@@ -416,12 +463,14 @@ class ThreadScan(QtCore.QThread):
        
 if __name__=='__main__':
     appli=QApplication(sys.argv)
-    import moteurA2V as A2V
-    motorType='A2V'
-    motor="Moteur0A"
-    MOT=A2V.MOTORA2V(motor)
     
-    s=SCAN(MOT=MOT,motor=motor,configMotName='./fichiersConfig/configMoteurA2V.ini') # for the scan)
+    motorType='motorTest'
+    motor="moteurTest"
+    import moteurtest as mTest
+    motorType=mTest
+    MOT=motorType.MOTORTEST(motor) 
+    
+    s=SCAN(MOT=MOT,motor=motor,configMotName='./fichiersConfig/configMoteurTest.ini') # for the scan)
         
     s.show()
     appli.exec_()

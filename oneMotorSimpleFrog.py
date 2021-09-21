@@ -10,7 +10,7 @@ Created on Tue Apr 16 15:49:41 2019
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtWidgets import QApplication,QVBoxLayout,QHBoxLayout,QPushButton,QDoubleSpinBox,QToolButton
+from PyQt5.QtWidgets import QApplication,QVBoxLayout,QHBoxLayout,QDoubleSpinBox,QToolButton
 from PyQt5.QtWidgets import QComboBox,QLabel
 from PyQt5.QtGui import QIcon
 import sys,time,os
@@ -83,9 +83,15 @@ class ONEMOTOR(QWidget) :
         
         elif self.motorTypeName=='Apt':
              self.configMotName='configMoteurApt.ini'
-             import moteurApt as apt
-             self.motorType=apt
-             self.MOT=self.motorType.MOTORAPT(self.motor)     
+             import moteurtest as mTest
+             self.motorType=mTest
+             self.MOT=self.motorType.MOTORTEST(self.motor)     
+        
+        elif self.motorTypeName=='MotorTest':
+             self.configMotName='configMoteurTest.ini'
+             import moteurtest as mTest
+             self.motorType=mTest
+             self.MOT=self.motorType.MOTORTEST(self.motor)  
         
         else:
             print('Error config motor Type name')
@@ -145,7 +151,7 @@ class ONEMOTOR(QWidget) :
         hboxTitre.setAlignment(Qt.AlignCenter)
         self.nom=QLabel(self.name)
         
-        self.nom.setStyleSheet("font: bold 20pt;color:yellow")
+        self.nom.setStyleSheet("font: bold 15pt;color:yellow")
         hboxTitre.addWidget(self.nom)
         vbox1.addLayout(hboxTitre)
         
@@ -189,7 +195,7 @@ class ONEMOTOR(QWidget) :
         self.MoveStep.setMinimum(-1000000)
         self.MoveStep.setMaximumWidth(70)
         #self.MoveStep.setStyleSheet("background-color: green")
-        sizeWidth=70
+        sizeWidth=50
         self.absMvtButton=QToolButton()
         self.absMvtButton.setStyleSheet("QToolButton:!pressed{border-image: url(./Icons/playGreen.png);background-color: rgb(0, 0, 0,0) ;}""QToolButton:pressed{image: url(./Icons/playGreen.png);background-color: rgb(0, 0, 0,0) ;border-color: blue}")
         self.absMvtButton.setMinimumHeight(sizeWidth)
@@ -218,7 +224,7 @@ class ONEMOTOR(QWidget) :
         
         self.jogStep=QDoubleSpinBox()
         self.jogStep.setMaximum(10000)
-        self.jogStep.setMaximumWidth(90)
+        self.jogStep.setMaximumWidth(80)
         self.jogStep.setStyleSheet("font: bold 12pt")
         self.jogStep.setValue(self.jogValue)
   
@@ -240,10 +246,10 @@ class ONEMOTOR(QWidget) :
         self.stopButton=QToolButton()
         self.stopButton.setStyleSheet("QToolButton:!pressed{border-image: url(./Icons/close.png);background-color: rgb(0, 0, 0,0) ;}""QToolButton:pressed{image: url(./Icons/close.png);background-color: rgb(0, 0, 0,0) ;border-color: blue}")
         
-        self.stopButton.setMaximumHeight(90)
-        self.stopButton.setMaximumWidth(90)
-        self.stopButton.setMinimumHeight(90)
-        self.stopButton.setMinimumWidth(90)
+        self.stopButton.setMaximumHeight(50)
+        self.stopButton.setMaximumWidth(50)
+        self.stopButton.setMinimumHeight(50)
+        self.stopButton.setMinimumWidth(50)
         self.stopButton.setToolTip('Stop Motor')
         
         hboxStop=QHBoxLayout()
@@ -254,6 +260,7 @@ class ONEMOTOR(QWidget) :
         #vbox1.addStretch(10)
         #vbox1.addSpacing(10)
         self.setLayout(vbox1)
+        vbox1.setContentsMargins(0,0,0,0)
         self.jogStep.setFocus()
         
     def actionButton(self):
@@ -262,6 +269,8 @@ class ONEMOTOR(QWidget) :
         self.plus.setAutoRepeat(True)
         self.moins.clicked.connect(self.mMove)# jog -
         self.moins.setAutoRepeat(True) 
+        self.absMvtButton.clicked.connect(self.MOVE)
+        
         self.zeroButton.clicked.connect(self.Zero)
         self.stopButton.clicked.connect(self.StopMot)
         self.unitButton.currentIndexChanged.connect(self.unit)
@@ -272,6 +281,24 @@ class ONEMOTOR(QWidget) :
         '''
         
         self.MOT.stopMotor()
+    
+    def MOVE(self):
+        '''
+        absolue mouvment
+        '''
+        
+        a=float(self.MoveStep.value())
+        # print(a)
+        a=float(a*self.unitChange) # changement d unite
+        if a<self.buteNeg :
+            print( "STOP : Butée Négative")
+            self.MOT.stopMotor()
+        elif a>self.butePos :
+            print( "STOP : Butée Positive")
+            self.MOT.stopMotor()
+        else :
+            self.MOT.move(a)
+    
     
     
     def pMove(self):# action jog +
@@ -403,8 +430,8 @@ class PositionThread(QtCore.QThread):
 
         
 if __name__ =='__main__':
-    motor0="Moteur0A"
-    motorType="A2V"
+    motor0="MoteurTest"
+    motorType="MotorTest"
     appli=QApplication(sys.argv)
     mot5=ONEMOTOR(mot0=motor0,motorTypeName0=motorType,nomWin='motorSimple',unit=1,jogValue=100)
     mot5.show()

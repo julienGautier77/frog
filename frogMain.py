@@ -7,10 +7,10 @@ Created on Wed Dec  9 17:39:44 2020
 """
 import qdarkstyle 
 from pyqtgraph.Qt import QtCore,QtGui 
-from PyQt5.QtWidgets import QApplication,QVBoxLayout,QHBoxLayout,QPushButton,QMainWindow,QLabel,QDockWidget,QSlider,QInputDialog,QCheckBox
-from PyQt5.QtWidgets import QMenu,QWidget,QFrame,QTableWidget,QTableWidgetItem,QAbstractItemView,QTabWidget,QComboBox,QToolButton,QSpinBox
+from PyQt5.QtWidgets import QApplication,QMessageBox,QVBoxLayout,QHBoxLayout,QMainWindow,QLabel,QDockWidget,QSlider,QInputDialog,QCheckBox
+from PyQt5.QtWidgets import QMenu,QWidget,QTabWidget,QComboBox,QToolButton,QSpinBox
 import sys,time,os
-from pyqtgraph.Qt import QtCore
+
 from PyQt5.QtCore import Qt
 
 from PyQt5.QtGui import QIcon
@@ -22,12 +22,15 @@ import numpy as np
 
 from oneMotorSimpleFrog import ONEMOTOR
 from scanMotor import SCAN
-from visu import SEE2
-from visualResult import SEERESULT
 
+from visualResult import SEERESULT
 from seabreeze.spectrometers import Spectrometer, list_devices
 
+version='2021.09'
+
 class FROG(QMainWindow) :
+    
+    isrunning=QtCore.pyqtSignal(bool)
     
     def __init__(self,parent=None):
         super().__init__(parent)
@@ -59,13 +62,13 @@ class FROG(QMainWindow) :
         self.setWindowIcon(QIcon(self.icon+'LOA.png'))
         self.setWindowTitle('FROG ')
         
-        self.motorName="Moteur0A"
-        self.motorType="A2V"
+        self.motorName="moteurTest"#"Moteur0A"
+        self.motorType='MotorTest'#"A2V"
         self.configPath="./fichiersConfig/"
-        self.configMotName='configMoteurA2V.ini'
+        self.configMotName='configMoteurTest.ini'#'configMoteurA2V.ini'
         
         self.confpath=str(p.parent) + sepa
-        print('confpath',self.confpath)
+        # print('confpath',self.confpath)
         
         self.bg=0
         self.motor=ONEMOTOR(mot0=self.motorName,motorTypeName0=self.motorType,unit=3,jogValue=1)
@@ -77,11 +80,27 @@ class FROG(QMainWindow) :
         
         
         listdevice=list_devices() ## open device flame spectrometer 
-        self.spectrometer=Spectrometer(listdevice[0])
-        print("spectrometer connected @",self.spectrometer,print(self.spectrometer.stray_light_coeffs()))
+        try : 
+            self.spectrometer=Spectrometer(listdevice[0])
+            
+        except :
+            self.spectrometer=[]
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error connexion Spectrometer")
+            msg.setInformativeText("Try to reconnect the USB or resart the program")
+            msg.setWindowTitle("Spectrometer not connected...")
+            msg.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+            msg.exec_()
+            pass
+        print('__________FROG__________')
+        print('')
+        print('  Version  : ',version)
+        print("  Spectrometer connected @ ",self.spectrometer)
         self.wavelengths=self.spectrometer.wavelengths() # array Wavelengths of the spectrometer 
-        print("Wavelength: " ,self.wavelengths.min(),self.wavelengths.max())
-        
+        print("  Wavelength : " ,self.wavelengths.min(),self.wavelengths.max())
+        print('  Motor name: ',self.motorName,'  Type: ',self.motorType)
+        print('')
         self.MatData=[]
         self.MatFs=[]
         self.position=0
@@ -106,7 +125,7 @@ class FROG(QMainWindow) :
         self.snapButton=QToolButton(self)
         self.snapButton.setPopupMode(0)
         menu=QMenu()
-        #menu.addAction('acq',self.oneImage)
+        # menu.addAction('acq',self.oneImage)
         menu.addAction('set nb of shot',self.nbShotAction)
         self.snapButton.setMenu(menu)
         self.snapButton.setMaximumWidth(self.sizebuttonMax)
@@ -186,8 +205,8 @@ class FROG(QMainWindow) :
         self.shutterBox=QSpinBox()
         self.shutterBox.setStyleSheet('font :bold  8pt')
         self.shutterBox.setMaximumWidth(200)
-        self.hSliderShutter.setMaximum(5000)
-        self.shutterBox.setMaximum(5000)
+        self.hSliderShutter.setMaximum(1100)
+        self.shutterBox.setMaximum(1100)
         self.shutterBox.setValue(100)
         hboxShutter=QHBoxLayout()
         hboxShutter.setContentsMargins(5, 0, 0, 0)
@@ -221,15 +240,21 @@ class FROG(QMainWindow) :
         self.moyBox.setStyleSheet('font :bold  8pt')
         self.moyBox.setMaximum(100)
         self.moyBox.setValue(1)
+        
         hboxMoy=QHBoxLayout()
-        hboxMoy.setContentsMargins(5, 17, 200, 0)
-        hboxMoy.setSpacing(10)
 
         hboxMoy.addWidget(self.labelMoy)
         hboxMoy.addWidget(self.moyBox)
         
+        hboxMoy.setSpacing(1)
+        
+        hboxMoy.setContentsMargins(5, 17, 200, 0)
+        hbox2Moy=QHBoxLayout()
+        hbox2Moy.addLayout(hboxMoy)
+        hbox2Moy.setSizeConstraint(QtGui.QLayout.SetFixedSize)
         self.widgetMoy=QWidget(self)
-        self.widgetMoy.setLayout(hboxMoy)
+        self.widgetMoy.setLayout(hbox2Moy)
+        
         self.dockMoy=QDockWidget(self)
         self.dockMoy.setWidget(self.widgetMoy)
         
@@ -265,11 +290,13 @@ class FROG(QMainWindow) :
         hboxRange.addWidget(labelRange)
         self.vLatBox.addLayout(hboxRange)
         self.vLatBox.addWidget(self.widgetRange)
-        self.vLatBox.addStretch(1)
+        self.vLatBox.addStretch(0)
         self.vLatBox.addWidget(self.motor)
-        self.vLatBox.addStretch(1)
+        self.vLatBox.addStretch(0)
         
         self.vLatBox.addWidget(self.scanWidget)
+        self.vLatBox.setContentsMargins(0,0,0,0)
+        # self.vLatBox.setStretch(5,0)
         self.hbox.addLayout(self.vLatBox)
         self.hbox.setStretch(0, 3)
         #self.scanWidget.setStyleSheet('border-color:w')
@@ -319,9 +346,11 @@ class FROG(QMainWindow) :
         self.hSliderShutter.sliderReleased.connect(self.mSliderShutter)
         self.moyBox.editingFinished.connect(self.MoyenneAct)    
         self.scanWidget.acqMain.connect(self.acquireScan)
+        
         self.scanWidget.scanStop.connect(self.endScan)
         
         self.scanWidget.startOn.connect(self.ResetData)
+        
         # self.trigg.currentIndexChanged.connect(self.trigger)
     
     def MoyenneAct(self):
@@ -376,8 +405,9 @@ class FROG(QMainWindow) :
     
     def acquireScan(self,pos,nbShoot):
         #acquire on image with scan program
-        
+        self.scanWidget.AcqRunning(acqRunning=True)
         self.nbShoot=nbShoot # numero du shoot
+        
         self.acquireOneImage()
         self.position=pos # on recupere la valeur de la postion moteur a chaque acquisition
        
@@ -423,9 +453,17 @@ class FROG(QMainWindow) :
     def endScan (self):
         # at the end of the scan we plot MatData( 2d matrix of specta) vs MatFs (vector of the position of the motor) 
         self.MatDataNumpy=np.array(self.MatData)
-        self.MatFs=np.array(self.MatFs)
+        self.MatFsNumpy=np.array(self.MatFs)
+    
         self.wavelengths=np.array(self.wavelengths)
-        self.WidgetResult.newDataReceived(self.MatDataNumpy,axisX=self.MatFs,axisY=self.wavelengths)
+        self.WidgetResult.newDataReceived(self.MatDataNumpy,axisX=self.MatFsNumpy,axisY=self.wavelengths)
+        print('dim matrice result :',self.MatDataNumpy.shape)
+        print('dim matrice fs :',len(self.MatFsNumpy))
+        print('dim matrice wavelengths : ',len(self.wavelengths))
+        #self.MatFs=[]
+        self.tabs.setCurrentIndex(1)
+        self.stopAcq()
+        
     
     def stateCam(self,state):
         self.camIsRunnig=state
@@ -438,6 +476,7 @@ class FROG(QMainWindow) :
             self.stopAcq()
             
     def newImageReceived(self,data):
+        
         if self.bgSoustract.isChecked():
             self.data=data-self.bg
             
@@ -448,8 +487,11 @@ class FROG(QMainWindow) :
        
         # self.MatData=np.append(self.MatData,self.data)
         self.MatData.append(self.data)
-       
+        # print(self.position)
         self.MatFs.append(self.position)
+        
+        self.scanWidget.AcqRunning(acqRunning=False)
+        
         if self.camIsRunnig is False:
             self.stopAcq()
     
@@ -461,7 +503,7 @@ class FROG(QMainWindow) :
         if ok:
             self.nbShot=int(nbShot)
             if self.nbShot<=0:
-               self.nbShot=1
+                self.nbShot=1
                
                
     def stopAcq(self):
@@ -533,7 +575,7 @@ class ThreadOneAcq(QtCore.QThread):
                     
                     dataSp=self.spectrometer.intensities()
                     data=data+dataSp
-                    print('one acq shoot',m)
+                    print('Acqusition Spectro',m+1,'/',self.parent.moyenne)
                 data=data /self.parent.moyenne
                 
                 if np.max(data)>0:
@@ -549,6 +591,7 @@ class ThreadOneAcq(QtCore.QThread):
                 
             else:
                 break
+            
         self.newStateCam.emit(False)
         
         
@@ -642,7 +685,7 @@ class THREADBGACQ(QtCore.QThread):
                 data=0
                 
                 for m in range (self.parent.moyenne):
-                    print('moy',m)
+                    #print('moy',m)
                     dataSp=self.spectrometer.intensities()
                     data=data+dataSp
                     
@@ -661,6 +704,7 @@ class THREADBGACQ(QtCore.QThread):
                 
             else:
                 break
+            
         self.newStateCam.emit(False)
         
         

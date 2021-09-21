@@ -18,9 +18,9 @@ created 2021/11/02 : new design
 
 
 
-from PyQt5.QtWidgets import QApplication,QVBoxLayout,QHBoxLayout,QWidget,QPushButton,QGridLayout
-from PyQt5.QtWidgets import QInputDialog,QSlider,QCheckBox,QLabel,QSizePolicy,QMenu,QMessageBox
-from PyQt5.QtWidgets import QShortcut,QDockWidget,QToolBar,QMainWindow,QToolButton,QAction,QStatusBar
+from PyQt5.QtWidgets import QApplication,QVBoxLayout,QHBoxLayout,QWidget,QPushButton,QGridLayout,QDoubleSpinBox
+from PyQt5.QtWidgets import QInputDialog,QSlider,QLabel,QSizePolicy,QMenu,QMessageBox
+from PyQt5.QtWidgets import QShortcut,QMainWindow,QAction,QStatusBar
 from pyqtgraph.Qt import QtCore,QtGui 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -55,6 +55,64 @@ __author__=visu.__author__
 
 __all__=['SEERESULT']
 
+
+class WINDOWRANGE(QWidget):
+    """Samll widget to set axis range
+    """
+    def __init__(self):
+        super().__init__()
+        self.isWinOpen=False
+        self.setup()
+        self.setWindowTitle("Range")
+    def setup(self):
+        #hRangeBox=QHBoxLayout()
+        hRangeGrid=QGridLayout()
+        
+        self.labelXmin=QLabel('Xmin:')
+        self.xMinBox=QDoubleSpinBox(self)
+        self.xMinBox.setMinimum(-100000)
+        self.xMinBox.setMaximum(100000)
+        hRangeGrid.addWidget(self.labelXmin,0,0)
+        hRangeGrid.addWidget(self.xMinBox,0,1)
+        self.labelXmax=QLabel('Xmax:')
+        self.xMaxBox=QDoubleSpinBox(self)
+        self.xMaxBox.setMaximum(100000)
+        self.xMaxBox.setMinimum(-100000)
+        hRangeGrid.addWidget(self.labelXmax,1,0)
+        hRangeGrid.addWidget(self.xMaxBox,1,1)
+        
+        self.labelYmin=QLabel('Ymin:')
+        self.yMinBox=QDoubleSpinBox(self)
+        self.yMinBox.setMinimum(-100000)
+        self.yMinBox.setMaximum(100000)
+        hRangeGrid.addWidget(self.labelYmin,2,0)
+        hRangeGrid.addWidget(self.yMinBox,2,1)
+        self.labelYmax=QLabel('Ymax:')
+        self.yMaxBox=QDoubleSpinBox(self)
+        self.yMaxBox.setMaximum(100000)
+        self.yMaxBox.setMinimum(-100000)
+        hRangeGrid.addWidget(self.labelYmax,3,0)
+        hRangeGrid.addWidget(self.yMaxBox,3,1)
+        self.applyButton=QPushButton('Apply')
+        self.ResetButton=QPushButton('Reset')
+        hRangeGrid.addWidget(self.applyButton,4,0)
+        hRangeGrid.addWidget(self.ResetButton,4,1)
+        hRangeGrid.setSizeConstraint(QtGui.QLayout.SetFixedSize)
+        self.setLayout(hRangeGrid)
+        
+
+        
+    def closeEvent(self, event):
+        """ when closing the window
+        """
+        self.isWinOpen=False
+        
+        time.sleep(0.1)
+        event.accept()
+
+
+
+
 class SEERESULT(QMainWindow) :
     
     '''
@@ -77,9 +135,10 @@ class SEERESULT(QMainWindow) :
             plot3D 
     '''
    
-    def __init__(self,file=None,path=None,**kwds):
+    def __init__(self,file=None,path=None,parent=None,**kwds):
         
-        super().__init__()
+        super().__init__(parent)
+        
         version=__version__
         print("data visualisation :  ",version)
         p = pathlib.Path(__file__)
@@ -88,7 +147,7 @@ class SEERESULT(QMainWindow) :
         sepa=os.sep
         self.icon=str(p.parent) + sepa+'icons' +sepa
         self.colorBar='flame'
-        
+        self.parent=parent
         self.nomFichier=''
         
         
@@ -555,32 +614,54 @@ class SEERESULT(QMainWindow) :
         penFit=pg.mkPen(color='r',width=2)
         self.pFit=self.winPLOTX.plot(pen=penFit)
         
-        self.vbox2.addWidget(self.sliderImage)
+        #self.vbox2.addWidget(self.sliderImage)
+        
         hMainLayout.addLayout(self.vbox1)
         hMainLayout.addLayout(self.vbox2)
         
-        self.hboxLabelfwhm=QHBoxLayout()
+        self.hboxLabelfwhm=QVBoxLayout()
+        self.hboxLabelfwhm.setAlignment(Qt.AlignCenter)
         self.fwhmLabelFit=QLabel('FWHM (fit):')
-        self.fwhmLabelFit.setStyleSheet("font: bold 20pt;color:red")
+        self.fwhmLabelFit.setStyleSheet("font: bold 12pt;color:red")
         self.fwhmLabelFitValue=QLabel('...')
-        self.fwhmLabelFitValue.setStyleSheet("font: bold 20pt;color:red")
+        self.fwhmLabelFitValue.setStyleSheet("font: bold 12pt;color:red")
         self.hboxLabelfwhm.addWidget(self.fwhmLabelFit)
         self.hboxLabelfwhm.addWidget(self.fwhmLabelFitValue)
         
         self.fwhmLabel=QLabel('FWHM :')
-        self.fwhmLabel.setStyleSheet("font: bold 20pt;color:yellow")
+        self.fwhmLabel.setStyleSheet("font: bold 12pt;color:yellow")
         self.fwhmLabelValue=QLabel('...')
-        self.fwhmLabelValue.setStyleSheet("font: bold 20pt;color:yellow")
+        self.fwhmLabelValue.setStyleSheet("font: bold 12pt;color:yellow")
+        
         self.hboxLabelfwhm.addWidget(self.fwhmLabel)
         self.hboxLabelfwhm.addWidget(self.fwhmLabelValue)
         
         
         
-        self.vbox2.addLayout(self.hboxLabelfwhm)
         
+        self.widgetRange=WINDOWRANGE()
+        self.widgetRange.labelXmin.setText("Time (fs) Min ")
+        self.widgetRange.labelXmax.setText("Time (fs) Min ")
+        self.widgetRange.labelYmin.setText("Wavelenght(nm) Min ")
+        self.widgetRange.labelYmax.setText("Wavelenght(nm) Maxn ")
+        
+        self.vbox3=QVBoxLayout()
+        hboxRange=QHBoxLayout()
+        hboxRange.setAlignment(Qt.AlignCenter)
+        labelRange=QLabel('Range')
+        labelRange.setStyleSheet("font: bold 12pt;color:yellow")
+        hboxRange.addWidget(labelRange)
+        self.vbox3.addLayout(hboxRange)
+        self.vbox3.addStretch(0)
+        self.vbox3.addWidget(self.widgetRange)
+        self.vbox3.setContentsMargins(0,0,0,0)
+        
+        self.vbox3.addStretch(1)
+        self.vbox3.addLayout(self.hboxLabelfwhm)
+        hMainLayout.addLayout(self.vbox3)
         hMainLayout.setContentsMargins(1,1,1,1)
         #hMainLayout.setSpacing(1)
-        #hMainLayout.setStretch(10,1)
+        hMainLayout.setStretch(0,5)
         MainWidget=QWidget()
         
         MainWidget.setLayout(hMainLayout)
@@ -604,8 +685,13 @@ class SEERESULT(QMainWindow) :
     def actionButton(self):
         # action of button
         
-       
+        self.widgetRange.applyButton.clicked.connect(self.setRangeOn)
+        self.widgetRange.ResetButton.clicked.connect(self.setRangeReset)
+        
+        
         self.ro1.sigRegionChangeFinished.connect(self.roiChanged)
+        
+        self.plotRectZoom.sigRegionChanged.connect(self.roiChangedZoom)
         
         self.ROICross.sigRegionChangeFinished.connect(self.PlotXYRect)
         
@@ -1117,7 +1203,9 @@ class SEERESULT(QMainWindow) :
             
             
             self.curve3.setData(x=self.axisX,y=coupeY,clear=True)#20+self.yminR+coupeYnorm,clear=True)
-            self.winPLOTX.setXRange(min(self.axisX),max(self.axisX))
+            # self.winPLOTX.setXRange(min(self.axisX),max(self.axisX))
+            self.winPLOTX.setXRange(self.xMin,self.xMax)
+        
             self.winPLOTX.setYRange(min(coupeY),max(coupeY))
                                     
             ###  fwhm on the  X et Y curves if max  >20 counts if checked in winOpt
@@ -1199,8 +1287,9 @@ class SEERESULT(QMainWindow) :
             self.winPLOTY.addItem(self.textY)
             self.p1.removeItem(self.ROICross)
             self.checkBoxPlotRect.setChecked(False)
-            self.winPLOTX.setXRange(0,self.dimx)
-            self.winPLOTY.setYRange(self.dimy,0)
+            
+            self.winPLOTX.setXRange(self.xMin,self.xMax)
+            self.winPLOTY.setYRange(self.yMin,self.yMax)
             
             self.Coupe()
         else:
@@ -1265,7 +1354,24 @@ class SEERESULT(QMainWindow) :
         self.ry=self.ro1.size()[1]
         self.conf.setValue(self.name+"/rx",int(self.rx))
         self.conf.setValue(self.name+"/ry",int(self.ry))
-      
+        
+    def roiChangedZoom (self):
+        
+        
+        self.xZoomMin=(self.plotRectZoom.pos()[0])
+        self.yZoomMin=(self.plotRectZoom.pos()[1])
+        self.xZoomMax=(self.plotRectZoom.pos()[0])+self.plotRectZoom.size()[0]
+        self.yZoomMax=(self.plotRectZoom.pos()[1])+self.plotRectZoom.size()[1]
+       
+        self.xMin=self.axisX[int(self.xZoomMin)]
+        self.xMax=self.axisX[int(self.xZoomMax)]
+        self.yMin=self.axisY[int(self.yZoomMin)]
+        self.yMax=self.axisY[int(self.yZoomMax)]
+        
+        self.widgetRange.xMinBox.setValue(self.xMin)
+        self.widgetRange.yMinBox.setValue(self.yMin)
+        self.widgetRange.xMaxBox.setValue(self.xMax)
+        self.widgetRange.yMaxBox.setValue(self.yMax)
         
     def bloquer(self): # block the cross
         
@@ -1454,6 +1560,8 @@ class SEERESULT(QMainWindow) :
             self.axisXPixel=True
         else:
             self.axisXPixel=False
+        
+        
         self.Display(self.data)
         
     
@@ -1490,11 +1598,31 @@ class SEERESULT(QMainWindow) :
             #self.p1.setAspectLocked(True)
             self.p1.removeItem(self.plotRectZoom)
             
+            self.xMin=self.axisX[int(self.xZoomMin)]
+            self.xMax=self.axisX[int(self.xZoomMax)]
+            self.yMin=self.axisY[int(self.yZoomMin)]
+            self.yMax=self.axisY[int(self.yZoomMax)]
+            
+            self.widgetRange.xMinBox.setValue(self.xMin)
+            self.widgetRange.yMinBox.setValue(self.yMin)
+            self.widgetRange.xMaxBox.setValue(self.xMax)
+            self.widgetRange.yMaxBox.setValue(self.yMax)
+            
+            
+            self.winPLOTX.setXRange(self.xMin,self.xMax)
+            self.winPLOTY.setYRange(self.yMin,self.yMax)
+            
             self.plotRectZoomEtat="ZoomOut"
         
         elif self.plotRectZoomEtat=="ZoomOut": 
             self.p1.setYRange(0,self.dimy)
             self.p1.setXRange(0,self.dimx)
+            self.xMax=self.axisX.max()
+            self.yMax=self.axisY.max()
+            self.xMin=self.axisX.min()
+            self.yMin=self.axisY.min()
+            self.winPLOTX.setXRange(self.xMin,self.xMax)
+            self.winPLOTY.setYRange(self.yMin,self.yMax)
             self.ZoomRectButton.setIcon(QtGui.QIcon(self.icon+"loupe.png"))
             self.plotRectZoomEtat="Zoom"
             #self.p1.setAspectLocked(True,ratio=1)
@@ -1503,11 +1631,23 @@ class SEERESULT(QMainWindow) :
         if self.plotRectZoomEtat=="ZoomOut":
             self.p1.setXRange(self.xZoomMin,self.xZoomMax)
             self.p1.setYRange(self.yZoomMin,self.yZoomMax)
+            
+            self.xMax=self.axisX.max()
+            self.yMax=self.axisY.max()
+            self.xMin=self.axisX.min()
+            self.yMin=self.axisY.min()
+            self.winPLOTX.setXRange(self.xMin,self.xMax)
+            self.winPLOTY.setYRange(self.yMin,self.yMax)
             #self.p1.setAspectLocked(True)
         else:
             self.p1.setYRange(0,self.dimy)
             self.p1.setXRange(0,self.dimx)
-            
+            self.xMax=self.axisX.max()
+            self.yMax=self.axisY.max()
+            self.xMin=self.axisX.min()
+            self.yMin=self.axisY.min()
+            self.winPLOTX.setXRange(self.xMin,self.xMax)
+            self.winPLOTY.setYRange(self.yMin,self.yMax)
             
     def flipAct (self):
         
@@ -1622,7 +1762,57 @@ class SEERESULT(QMainWindow) :
         #     self.hist.plot.setLogMode(False,False)
         
         #     self.hist.autoHistogramRange()
+    
+    def setRangeOn(self) :       
+        self.xZoomMin=(self.widgetRange.xMinBox.value())
+        self.yZoomMin=(self.widgetRange.yMinBox.value())
+        self.xZoomMax=(self.widgetRange.xMaxBox.value())
+        self.yZoomMax=(self.widgetRange.yMaxBox.value())
         
+        
+        # transform value to index
+        self.xZoomMin=list((abs(self.axisX-self.xZoomMin))).index(min(list(abs(self.axisX-self.xZoomMin))))
+        
+        self.xZoomMax=list((abs(self.axisX-self.xZoomMax))).index(min(list(abs(self.axisX-self.xZoomMax))))
+       
+        self.yZoomMin=list((abs(self.axisY-self.yZoomMin))).index(min(list(abs(self.axisY-self.yZoomMin))))
+        
+        self.yZoomMax=list((abs(self.axisY-self.yZoomMax))).index(min(list(abs(self.axisY-self.yZoomMax))))
+       
+        print(self.xZoomMin,self.xZoomMax)
+       
+        
+        self.p1.setXRange(self.xZoomMin,self.xZoomMax)
+        self.p1.setYRange(self.yZoomMin,self.yZoomMax)
+        
+        self.xMax=self.widgetRange.xMaxBox.value()
+        self.yMax=self.widgetRange.yMaxBox.value()
+        self.xMin=self.widgetRange.xMinBox.value()
+        self.yMin=self.widgetRange.yMinBox.value()
+        
+        self.winPLOTX.setXRange(self.xMin,self.xMax)
+        self.winPLOTY.setYRange(self.yMin,self.yMax)
+        
+        self.plotRectZoomEtat="ZoomIn"
+        
+    def setRangeReset(self) :  
+        
+        self.p1.setYRange(0,self.dimy)
+        self.p1.setXRange(0,self.dimx)
+        
+        self.xMax=self.axisX.max()
+        self.yMax=self.axisY.max()
+        self.xMin=self.axisX.min()
+        self.yMin=self.axisY.min()
+        
+        self.winPLOTX.setXRange(self.xMin,self.xMax)
+        self.winPLOTY.setYRange(self.yMin,self.yMax)
+        
+        
+        self.ZoomRectButton.setIcon(QtGui.QIcon(self.icon+"loupe.png"))
+        self.plotRectZoomEtat="Zoom"    
+    
+    
     def closeEvent(self,event):
         # when the window is closed
         if self.encercled=="on":
