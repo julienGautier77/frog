@@ -11,7 +11,7 @@ Created on Tue Apr 16 15:49:41 2019
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QApplication,QVBoxLayout,QHBoxLayout,QDoubleSpinBox,QToolButton
-from PyQt5.QtWidgets import QComboBox,QLabel
+from PyQt5.QtWidgets import QComboBox,QLabel,QFrame
 from PyQt5.QtGui import QIcon
 import sys,time,os
 import qdarkstyle
@@ -149,9 +149,9 @@ class ONEMOTOR(QWidget) :
         #pos.setMaximumHeight(20)
         hboxTitre=QHBoxLayout()
         hboxTitre.setAlignment(Qt.AlignCenter)
-        self.nom=QLabel(self.name)
+        self.nom=QLabel('Motion Control')#+self.name)
         
-        self.nom.setStyleSheet("font: bold 15pt;color:yellow")
+        self.nom.setStyleSheet("font: bold 15pt;color:white")
         hboxTitre.addWidget(self.nom)
         vbox1.addLayout(hboxTitre)
         
@@ -259,8 +259,17 @@ class ONEMOTOR(QWidget) :
         vbox1.addLayout(hboxStop)
         #vbox1.addStretch(10)
         #vbox1.addSpacing(10)
-        self.setLayout(vbox1)
-        vbox1.setContentsMargins(0,0,0,0)
+        
+        Frame=QFrame()
+        Frame.setStyleSheet('background-color: rgb(20, 20, 20);border-radius:40px;')
+        Frame.setLayout(vbox1)
+        self.vMain=QVBoxLayout()
+        self.vMain.addWidget(Frame)
+        self.setLayout(self.vMain)
+        
+        
+        #ßself.setLayout(vbox1)
+        # vbox1.setContentsMargins(0,0,0,0)
         self.jogStep.setFocus()
         
     def actionButton(self):

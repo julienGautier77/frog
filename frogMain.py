@@ -82,7 +82,11 @@ class FROG(QMainWindow) :
         listdevice=list_devices() ## open device flame spectrometer 
         try : 
             self.spectrometer=Spectrometer(listdevice[0])
-            
+            sh=int(self.confFrog.value('VISU'+'/shutter'))
+            try:
+                self.spectrometer.integration_time_micros(sh*1000) # en micro
+            except: 
+                self.spectrometer.integration_time_micros(100*1000)
         except :
             self.spectrometer=[]
             msg = QMessageBox()
@@ -93,7 +97,7 @@ class FROG(QMainWindow) :
             msg.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
             msg.exec_()
             pass
-        print('__________FROG__________')
+        print('__________  F R O G  __________')
         print('')
         print('  Version  : ',version)
         print("  Spectrometer connected @ ",self.spectrometer)
@@ -201,13 +205,13 @@ class FROG(QMainWindow) :
         
         self.hSliderShutter=QSlider(Qt.Horizontal)
         self.hSliderShutter.setMaximumWidth(80)
-        self.hSliderShutter.setValue(100)
+        self.hSliderShutter.setValue(int(self.confFrog.value('VISU'+'/shutter')))
         self.shutterBox=QSpinBox()
         self.shutterBox.setStyleSheet('font :bold  8pt')
         self.shutterBox.setMaximumWidth(200)
         self.hSliderShutter.setMaximum(1100)
         self.shutterBox.setMaximum(1100)
-        self.shutterBox.setValue(100)
+        self.shutterBox.setValue(int(self.confFrog.value('VISU'+'/shutter')))
         hboxShutter=QHBoxLayout()
         hboxShutter.setContentsMargins(5, 0, 0, 0)
         hboxShutter.setSpacing(10)
@@ -262,7 +266,7 @@ class FROG(QMainWindow) :
         
         
         
-        self.graph=GRAPHCUT(symbol=None,title='Spectra',pen='w',label='Lambda (nm)',labelY='int')
+        self.graph=GRAPHCUT(symbol=None,title='Spectra',pen='w',label='Wavelenght (nm)',labelY='int')
         self.widgetRange=self.graph.widgetRange
         self.widgetRange.labelXmin.setText("Wavelenght(nm) Min ")
         self.widgetRange.labelXmax.setText("Wavelenght(nm) Max ")
@@ -283,19 +287,21 @@ class FROG(QMainWindow) :
         self.hbox.addWidget(self.graph)
         
         self.vLatBox=QVBoxLayout()
-        hboxRange=QHBoxLayout()
-        hboxRange.setAlignment(Qt.AlignCenter)
-        labelRange=QLabel('Range')
-        labelRange.setStyleSheet("font: bold 20pt;color:yellow")
-        hboxRange.addWidget(labelRange)
-        self.vLatBox.addLayout(hboxRange)
+        # hboxRange=QHBoxLayout()
+        # hboxRange.setAlignment(Qt.AlignCenter)
+        # labelRange=QLabel('Range')
+        # labelRange.setStyleSheet("font: bold 20pt;color:white")
+        # hboxRange.addWidget(labelRange)
+        # self.vLatBox.addLayout(hboxRange)
         self.vLatBox.addWidget(self.widgetRange)
+        
+        
         self.vLatBox.addStretch(0)
         self.vLatBox.addWidget(self.motor)
         self.vLatBox.addStretch(0)
         
         self.vLatBox.addWidget(self.scanWidget)
-        self.vLatBox.setContentsMargins(0,0,0,0)
+        # self.vLatBox.setContentsMargins(0,0,0,0)
         # self.vLatBox.setStretch(5,0)
         self.hbox.addLayout(self.vLatBox)
         self.hbox.setStretch(0, 3)
@@ -374,7 +380,7 @@ class FROG(QMainWindow) :
         time.sleep(0.1)
         self.spectrometer.integration_time_micros(sh*1000) # en micro
         # print(sh)
-        
+        self.confFrog.setValue('VISU'+'/shutter',sh)
         self.MoyenneAct()
     
     
@@ -382,7 +388,7 @@ class FROG(QMainWindow) :
         sh=self.hSliderShutter.value() 
         self.shutterBox.setValue(sh) # 
         self.spectrometer.integration_time_micros(sh*1000)
-        
+        self.confFrog.setValue('VISU'+'/shutter',sh)
     
     def acquireMultiImage(self):
         ''' 
@@ -457,9 +463,15 @@ class FROG(QMainWindow) :
     
         self.wavelengths=np.array(self.wavelengths)
         self.WidgetResult.newDataReceived(self.MatDataNumpy,axisX=self.MatFsNumpy,axisY=self.wavelengths)
-        print('dim matrice result :',self.MatDataNumpy.shape)
-        print('dim matrice fs :',len(self.MatFsNumpy))
-        print('dim matrice wavelengths : ',len(self.wavelengths))
+        print('  ')
+        print('  ')
+        print(' ___RESULTS___')
+        print('  dim matrice result :',self.MatDataNumpy.shape)
+        print('  dim matrice fs :',len(self.MatFsNumpy))
+        print('  dim matrice wavelengths : ',len(self.wavelengths))
+        print('  ')
+        print('  ')
+        
         #self.MatFs=[]
         self.tabs.setCurrentIndex(1)
         self.stopAcq()

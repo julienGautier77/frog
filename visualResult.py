@@ -20,7 +20,7 @@ created 2021/11/02 : new design
 
 from PyQt5.QtWidgets import QApplication,QVBoxLayout,QHBoxLayout,QWidget,QPushButton,QGridLayout,QDoubleSpinBox
 from PyQt5.QtWidgets import QInputDialog,QSlider,QLabel,QSizePolicy,QMenu,QMessageBox
-from PyQt5.QtWidgets import QShortcut,QMainWindow,QAction,QStatusBar
+from PyQt5.QtWidgets import QShortcut,QMainWindow,QAction,QStatusBar,QFrame
 from pyqtgraph.Qt import QtCore,QtGui 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -65,6 +65,14 @@ class WINDOWRANGE(QWidget):
         self.setup()
         self.setWindowTitle("Range")
     def setup(self):
+        hboxTitre=QHBoxLayout()
+        hboxTitre.setAlignment(Qt.AlignCenter)
+        self.nom=QLabel('Range Control')#+self.name)
+        
+        self.nom.setStyleSheet("font: bold 15pt;color:white")
+        hboxTitre.addWidget(self.nom)
+        vbox1=QVBoxLayout()
+        vbox1.addLayout(hboxTitre)
         #hRangeBox=QHBoxLayout()
         hRangeGrid=QGridLayout()
         
@@ -94,10 +102,23 @@ class WINDOWRANGE(QWidget):
         hRangeGrid.addWidget(self.labelYmax,3,0)
         hRangeGrid.addWidget(self.yMaxBox,3,1)
         self.applyButton=QPushButton('Apply')
+        self.applyButton.setStyleSheet("border-radius:20px;background-color: red")
         self.ResetButton=QPushButton('Reset')
+        self.ResetButton.setStyleSheet("border-radius:20px;background-color: green")
+        
         hRangeGrid.addWidget(self.applyButton,4,0)
         hRangeGrid.addWidget(self.ResetButton,4,1)
         hRangeGrid.setSizeConstraint(QtGui.QLayout.SetFixedSize)
+        
+        vbox1.addLayout(hRangeGrid)
+        vbox1.setContentsMargins(10,10,10,20)
+        
+        Frame=QFrame()
+        Frame.setStyleSheet('background-color: rgb(20, 20, 20);border-radius:30px;')
+        Frame.setLayout(vbox1)
+        self.vMain=QVBoxLayout()
+        self.vMain.addWidget(Frame)
+        self.setLayout(self.vMain)
         self.setLayout(hRangeGrid)
         
 
@@ -602,7 +623,7 @@ class SEERESULT(QMainWindow) :
         self.winPLOTY.showAxis('left',show=False)
         self.winPLOTY.getViewBox().invertY(False)
         self.winPLOTY.setLabel('right','Wavlenght (nm) ')
-        #self.winPLOTY.setContentsMargins(0,15,0,0)
+        self.winPLOTY.setContentsMargins(0,15,0,0)
         
         self.winPLOTX = self.winImage.addPlot(col=0,row=1)
         self.winPLOTX.setMaximumHeight(120)
@@ -610,7 +631,7 @@ class SEERESULT(QMainWindow) :
         self.winPLOTX.showAxis('left',show=False)
         self.winPLOTX.showAxis('right',show=True)
         self.winPLOTX.setLabel('top','Time (fs) ')
-        #self.winPLOTX.setContentsMargins(0,0,20,0) #left top right bottom
+        self.winPLOTX.setContentsMargins(0,0,20,0) #left top right bottom
         penFit=pg.mkPen(color='r',width=2)
         self.pFit=self.winPLOTX.plot(pen=penFit)
         
@@ -641,23 +662,24 @@ class SEERESULT(QMainWindow) :
         
         self.widgetRange=WINDOWRANGE()
         self.widgetRange.labelXmin.setText("Time (fs) Min ")
-        self.widgetRange.labelXmax.setText("Time (fs) Min ")
-        self.widgetRange.labelYmin.setText("Wavelenght(nm) Min ")
-        self.widgetRange.labelYmax.setText("Wavelenght(nm) Maxn ")
+        self.widgetRange.labelXmax.setText("Time (fs) Max ")
+        self.widgetRange.labelYmin.setText("Wavelenght (nm) Min ")
+        self.widgetRange.labelYmax.setText("Wavelenght (nm) Max ")
         
         self.vbox3=QVBoxLayout()
         hboxRange=QHBoxLayout()
         hboxRange.setAlignment(Qt.AlignCenter)
-        labelRange=QLabel('Range')
-        labelRange.setStyleSheet("font: bold 12pt;color:yellow")
-        hboxRange.addWidget(labelRange)
+        # labelRange=QLabel('Range')
+        # labelRange.setStyleSheet("font: bold 12pt;color:yellow")
+        # hboxRange.addWidget(labelRange)
         self.vbox3.addLayout(hboxRange)
         self.vbox3.addStretch(0)
         self.vbox3.addWidget(self.widgetRange)
         self.vbox3.setContentsMargins(0,0,0,0)
         
-        self.vbox3.addStretch(1)
+        self.vbox3.addStretch(0)
         self.vbox3.addLayout(self.hboxLabelfwhm)
+        self.vbox3.addStretch(1)
         hMainLayout.addLayout(self.vbox3)
         hMainLayout.setContentsMargins(1,1,1,1)
         #hMainLayout.setSpacing(1)

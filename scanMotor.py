@@ -8,7 +8,7 @@ Created on Mon Apr 22 20:23:31 2019
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import QWidget,QToolButton
+from PyQt5.QtWidgets import QWidget,QToolButton,QFrame
 from PyQt5.QtWidgets import QVBoxLayout,QHBoxLayout,QGridLayout,QDoubleSpinBox,QProgressBar
 from PyQt5.QtWidgets import QComboBox,QLabel
 from PyQt5.QtGui import QIcon
@@ -58,8 +58,8 @@ class SCAN(QWidget):
         
         hboxScan=QHBoxLayout()
         hboxScan.setAlignment(Qt.AlignCenter)
-        labelScan=QLabel('Scan')
-        labelScan.setStyleSheet("font: bold 20pt;color:yellow")
+        labelScan=QLabel('SCAN')
+        labelScan.setStyleSheet("font: bold 20pt;color:white")
         hboxScan.addWidget(labelScan)
         self.vbox.addLayout(hboxScan)
         
@@ -110,7 +110,7 @@ class SCAN(QWidget):
         self.val_nbr_step.setMaximumHeight(sizeHeight)
         self.val_nbr_step.setMinimumHeight(sizeHeight)
         self.val_nbr_step.setStyleSheet(font)
-        self.lab_step = QLabel("step value")
+        self.lab_step = QLabel("Step value:")
         self.lab_step.setStyleSheet(font)
         self.val_step = QDoubleSpinBox()
         self.val_step.setDecimals(0)
@@ -121,7 +121,7 @@ class SCAN(QWidget):
         self.val_step.setMaximumHeight(sizeHeight)
         self.val_step.setMinimumHeight(sizeHeight)
         self.val_step.setStyleSheet(font)
-        self.lab_ini = QLabel('Iniy value')
+        self.lab_ini = QLabel('Init value:')
         self.lab_ini.setStyleSheet(font)
         self.val_ini =QDoubleSpinBox()
         self.val_ini.setDecimals(0)
@@ -131,7 +131,7 @@ class SCAN(QWidget):
         self.val_ini.setMaximumHeight(sizeHeight)
         self.val_ini.setMinimumHeight(sizeHeight)
         self.val_ini.setStyleSheet(font)
-        self.lab_fin = QLabel('Final value')
+        self.lab_fin = QLabel('Final value:')
         self.lab_fin.setStyleSheet(font)
         self.val_fin =QDoubleSpinBox()
         self.val_fin.setDecimals(0)
@@ -151,7 +151,7 @@ class SCAN(QWidget):
         self.val_nbTir.setMaximumWidth(sizeWidth)
         self.val_nbTir.setEnabled(False)
         
-        self.lab_time=QLabel('TimeOut')
+        self.lab_time=QLabel('TimeOut:')
         self.lab_time.setStyleSheet(font)
         self.val_time=QDoubleSpinBox()
         self.val_time.setSuffix(" %s" % 's')
@@ -197,7 +197,14 @@ class SCAN(QWidget):
         hboxTitre.addWidget(self.but_start)
         hboxTitre.addWidget(self.but_stop)
         self.vbox.addLayout(grid_layout)
-        self.setLayout(self.vbox)
+        
+        
+        Frame=QFrame()
+        Frame.setStyleSheet('background-color: rgb(20, 20, 20);border-radius:40px;')
+        Frame.setLayout(self.vbox)
+        self.vMain=QVBoxLayout()
+        self.vMain.addWidget(Frame)
+        self.setLayout(self.vMain)
  
     
     def actionButton(self):
@@ -362,7 +369,7 @@ class ThreadScan(QtCore.QThread):
         self.stop=False
 
     def run(self):
-        print('Start Scan : ' )
+        print('     Start Scan :     ' )
         self.stop=False
         
         # print('number of steps:', self.parent.nbStep,self.parent.unitName)
@@ -423,16 +430,18 @@ class ThreadScan(QtCore.QThread):
                             break 
                 
                 self.acqScan.emit(self.parent.MOT.position(),nb)
+                print('Acquisition spectro en cours')
                 while self.parent.isrunnig==True: # if cam is ruunig we wait
-                    print('Acquisition spectro en cours...')#,self.parent.isrunnig)
+                    print('...',end='')#,self.parent.isrunnig)
                     if self.stop==True:
+                        print('') 
                         break
                     else :
 
                         time.sleep(0.1)
-                        
+                print('')       
                 print('wait ... ',self.val_time)#,self.stop)
-                print('Acquisition done  ')#,self.parent.isrunnig)
+                print('  Acquisition done  ')#,self.parent.isrunnig)
                 print('   ')
                 nb=nb+1
                 self.nbRemain.emit(nbTotShot-nb,nbTotShot)
@@ -441,7 +450,7 @@ class ThreadScan(QtCore.QThread):
                 time.sleep(self.val_time)
         
         
-        print ("End Scan")
+        print ("    End Scan    ")
         print('Go back to 0')
         self.parent.MOT.move(0)
         b=self.parent.MOT.position()
